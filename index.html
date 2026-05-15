@@ -49,7 +49,7 @@
   <span>🌊 웨이브: <span id="wave">1</span>/15</span>
   <span> | ⏱ <span id="time">60</span>s</span>
   <span> | 골드: <span id="gold">100</span></span>
-  <span> | 체력: <span id="hp">10</span></span>
+  <span> | 체력: <span id="hp">200</span></span>
   <span> | 타워: <span id="towerCount">0</span>/45</span>
   <br>
   <div id="slotBar"></div>
@@ -66,7 +66,7 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
-let gold=100, hp=10, wave=1, timeLeft=60;
+let gold=100, hp=200, wave=1, timeLeft=60;
 let placingType=null, gameStarted=false, selectedTower=null;
 let waveStarted=false, preparing=false;
 let spawnCount=0, spawnLimit=8;
@@ -77,8 +77,8 @@ const PATH_BLOCK_RADIUS=15, TOWER_BLOCK_RADIUS=20, MAX_SLOTS=6;
 let selectedSlot=-1;
 
 const TOWER_META={
-  fighter:   {label:'🗡', name:'파이터',   cost:50},
-  archer:    {label:'🏹', name:'궁수',     cost:100},
+  fighter:   {label:'🗡', name:'파이터',   cost:30},
+  archer:    {label:'🏹', name:'궁수',     cost:80},
   cannon:    {label:'💣', name:'대포',     cost:250},
   torch:     {label:'🔥', name:'횃불',     cost:200},
   puppeteer: {label:'🎭', name:'인형술사', cost:300},
@@ -200,9 +200,9 @@ class Doll{
   constructor(){
     this.x=path[path.length-1].x;
     this.y=path[path.length-1].y;
-    this.hp=100;
+    this.hp=200;
     this.maxHp=100;
-    this.speed=2.5;
+    this.speed=1;
     this.dead=false;
     this.pathIndex=path.length-2;
   }
@@ -250,12 +250,12 @@ class Enemy{
     this.type=type;
     this.x=path[0].x; this.y=path[0].y;
     this.i=1; this.hidden=false; this.isBoss=false;
-    if(type==='wanderer'){ this.hp=50;  this.maxHp=50;  this.speed=1;   this.color='red'; }
-    if(type==='thief'){    this.hp=25;  this.maxHp=25;  this.speed=2;   this.color='orange'; }
-    if(type==='knight'){   this.hp=200; this.maxHp=200; this.speed=0.6; this.color='blue'; }
-    if(type==='ninja'){    this.hp=100; this.maxHp=100; this.speed=2.3; this.color='purple'; this.hidden=true; }
-    if(type==='golem'){    this.hp=500; this.maxHp=500; this.speed=0.4; this.color='gray';   this.isBoss=true; }
-    if(type==='miniGolem'){this.hp=250; this.maxHp=250; this.speed=1;   this.color='lightgray'; }
+    if(type==='wanderer'){ this.hp=30;  this.maxHp=30;  this.speed=1;   this.color='red'; }
+    if(type==='thief'){    this.hp=15;  this.maxHp=15;  this.speed=2;   this.color='orange'; }
+    if(type==='knight'){   this.hp=150; this.maxHp=150; this.speed=0.6; this.color='blue'; }
+    if(type==='ninja'){    this.hp=50; this.maxHp=50; this.speed=2.3; this.color='purple'; this.hidden=true; }
+    if(type==='golem'){    this.hp=400; this.maxHp=400; this.speed=0.4; this.color='gray';   this.isBoss=true; }
+    if(type==='miniGolem'){this.hp=150; this.maxHp=150; this.speed=1;   this.color='lightgray'; }
   }
   update(){
     const t=path[this.i];
@@ -263,7 +263,7 @@ class Enemy{
     const dist=Math.hypot(dx,dy);
     if(dist<2){
       this.i++;
-      if(this.i>=path.length){ hp--; this.hp=0; }
+      if(this.i>=path.length){ hp-=this.hp; this.hp=0; }
     }else{
       this.x+=dx/dist*this.speed;
       this.y+=dy/dist*this.speed;
@@ -355,11 +355,11 @@ function nextWave(){
 class Tower{
   constructor(x,y,type){
     this.x=x; this.y=y; this.type=type;
-    if(type==='fighter'){   this.range=50;  this.damage=25;  this.coolMax=20;  }
-    if(type==='archer'){    this.range=120; this.damage=50;  this.coolMax=50;  }
-    if(type==='cannon'){    this.range=100; this.damage=100; this.coolMax=90;  }
+    if(type==='fighter'){   this.range=50;  this.damage=15;  this.coolMax=90;  }
+    if(type==='archer'){    this.range=120; this.damage=50;  this.coolMax=150;  }
+    if(type==='cannon'){    this.range=100; this.damage=130; this.coolMax=300;  }
     if(type==='torch'){     this.range=130; this.damage=0;   this.coolMax=0;   }
-    if(type==='puppeteer'){ this.range=0;   this.damage=0;   this.coolMax=120; }
+    if(type==='puppeteer'){ this.range=0;   this.damage=0;   this.coolMax=900; }
     this.baseRange=this.range;
     this.cool=0;
   }
