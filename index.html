@@ -9,16 +9,23 @@
     font-family:sans-serif; text-align:center;
     display:flex; flex-direction:column;
     align-items:center; justify-content:center; min-height:100vh;
+    position:relative;
   }
   canvas { background:#222; display:block; margin:10px auto; border:2px solid #555; }
   #ui { margin-top:5px; }
   button { padding:6px 12px; margin:4px; cursor:pointer; }
   #slotBar { display:flex; gap:8px; justify-content:center; margin:8px auto; }
+  #gameOverlay {
+    display:none; position:fixed;
+    top:0;left:0;width:100%;height:100%;
+    z-index:30; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center;
+  }
 </style>
 </head>
 <body>
 
-<div id="startScreen" style="position:absolute;width:100%;height:100%;background:#000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;">
+<div id="startScreen" style="position:fixed;width:100%;height:100%;background:#000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;">
   <h1>Mini Tower Defense</h1>
   <button onclick="startGame()">게임 시작</button>
   <div style="margin-top:20px;">
@@ -43,6 +50,12 @@
   </div>
 </div>
 
+<div id="gameOverlay">
+  <div id="overlayMsg" style="font-size:52px;font-weight:bold;margin-bottom:12px;text-shadow:0 0 20px currentColor;"></div>
+  <div id="overlaySubMsg" style="font-size:18px;margin-bottom:28px;color:#ddd;"></div>
+  <button onclick="resetGame()" style="padding:12px 28px;font-size:16px;cursor:pointer;background:#333;color:#fff;border:2px solid #888;border-radius:6px;">시작 화면으로</button>
+</div>
+
 <canvas id="game" width="600" height="400"></canvas>
 
 <div id="ui">
@@ -53,6 +66,13 @@
   <span> | 타워: <span id="towerCount">0</span>/45</span>
   <br>
   <div id="slotBar"></div>
+  <div id="speedBar" style="margin:6px auto;">
+    <span style="font-size:13px;color:#aaa;">배속: </span>
+    <button onclick="setSpeed(0)" id="spd0">⏸ 0배</button>
+    <button onclick="setSpeed(1)" id="spd1" style="outline:2px solid #0f0;">▶ 1배</button>
+    <button onclick="setSpeed(2)" id="spd2">▶▶ 2배</button>
+    <button onclick="setSpeed(3)" id="spd3">▶▶▶ 3배</button>
+  </div>
   <br>
   <button id="readyBtn" onclick="readyWave()" disabled>준비</button>
   <span id="readyTimer"></span>
@@ -70,15 +90,21 @@ let gold=100, hp=200, wave=1, timeLeft=60;
 let placingType=null, gameStarted=false, selectedTower=null;
 let waveStarted=false, preparing=false;
 let spawnCount=0, spawnLimit=8;
+let gameOver=false, gameSpeed=1;
+
+let spawnAccum=0, timeAccum=0;
+const SPAWN_MS=1000, TIME_MS=1000;
+const FRAME_MS=1000/60;
+
+let lastTimestamp=null;
 
 const equipped=[], towers=[], enemies=[], dolls=[];
-
 const PATH_BLOCK_RADIUS=15, TOWER_BLOCK_RADIUS=20, MAX_SLOTS=6;
 let selectedSlot=-1;
 
 const TOWER_META={
-  fighter:   {label:'🗡', name:'파이터',   cost:30},
-  archer:    {label:'🏹', name:'궁수',     cost:80},
+  fighter:   {label:'🗡', name:'파이터',   cost:50},
+  archer:    {label:'🏹', name:'궁수',     cost:100},
   cannon:    {label:'💣', name:'대포',     cost:250},
   torch:     {label:'🔥', name:'횃불',     cost:200},
   puppeteer: {label:'🎭', name:'인형술사', cost:300},
@@ -100,6 +126,13 @@ canvas.addEventListener('mousemove',e=>{
   mouseX=e.clientX-r.left; mouseY=e.clientY-r.top;
 });
 
+function setSpeed(s){
+  gameSpeed=s;
+  ['spd0','spd1','spd2','spd3'].forEach((id,i)=>{
+    document.getElementById(id).style.outline=i===s?'2px solid #0f0':'';
+  });
+}
+
 function isOnPath(x,y){
   for(let i=0;i<path.length-1;i++){
     const a=path[i],b=path[i+1];
@@ -119,7 +152,42 @@ function updateTowerCountUI(){
   document.getElementById('towerCount').textContent=towers.length;
 }
 
-// ── 슬롯바 ─────────────────────────────────────────
+function showOverlay(type){
+  gameOver=true; gameStarted=false;
+  const overlay=document.getElementById('gameOverlay');
+  const msg=document.getElementById('overlayMsg');
+  const sub=document.getElementById('overlaySubMsg');
+  if(type==='lose'){
+    overlay.style.background='rgba(60,0,0,0.88)';
+    msg.style.color='#ff4444';
+    msg.textContent='💀 게임 오버';
+    sub.textContent=`웨이브 ${wave}에서 기지가 함락되었습니다.`;
+  } else {
+    overlay.style.background='rgba(40,35,0,0.90)';
+    msg.style.color='#FFD700';
+    msg.textContent='🏆 게임 클리어!';
+    sub.textContent='모든 웨이브를 막아냈습니다! 축하합니다!';
+  }
+  overlay.style.display='flex';
+}
+
+function resetGame(){
+  document.getElementById('gameOverlay').style.display='none';
+  document.getElementById('startScreen').style.display='flex';
+  gold=100; hp=200; wave=1; timeLeft=60;
+  gameOver=false; gameStarted=false;
+  towers.length=0; enemies.length=0; dolls.length=0; equipped.length=0;
+  waveStarted=false; preparing=false; spawnCount=0;
+  placingType=null; selectedSlot=-1; selectedTower=null;
+  spawnAccum=0; timeAccum=0; lastTimestamp=null;
+  buildWaveQueue();
+  renderSlotBar(); renderEquip();
+  setSpeed(1);
+  const btn=document.getElementById('readyBtn');
+  btn.disabled=false; btn.style.display='inline-block';
+  document.getElementById('readyTimer').textContent='';
+}
+
 function renderSlotBar(){
   const bar=document.getElementById('slotBar');
   bar.innerHTML='';
@@ -168,7 +236,6 @@ document.addEventListener('keydown',e=>{
   if(n>=1&&n<=MAX_SLOTS) selectSlot(n-1);
 });
 
-// ── 인벤토리 ────────────────────────────────────────
 function equipTower(type){
   if(equipped.length>=MAX_SLOTS||equipped.includes(type)) return;
   equipped.push(type);
@@ -195,78 +262,60 @@ function toggleInventory(){
   ui.style.display=ui.style.display==='none'?'block':'none';
 }
 
-// ── 인형 클래스 ─────────────────────────────────────
 class Doll{
   constructor(){
-    this.x=path[path.length-1].x;
-    this.y=path[path.length-1].y;
-    this.hp=200;
-    this.maxHp=100;
-    this.speed=1;
-    this.dead=false;
-    this.pathIndex=path.length-2;
+    this.x=path[path.length-1].x; this.y=path[path.length-1].y;
+    this.hp=250; this.maxHp=250; this.speed=0.8;
+    this.dead=false; this.pathIndex=path.length-2;
   }
-
-  update(){
+  update(deltaMs){
     if(this.dead) return;
     if(this.pathIndex<0){ this.dead=true; return; }
-
     const node=path[this.pathIndex];
     const dx=node.x-this.x, dy=node.y-this.y;
     const dist=Math.hypot(dx,dy);
+    const move=this.speed*(deltaMs/FRAME_MS);
     if(dist<3){ this.pathIndex--; }
-    else{ this.x+=dx/dist*this.speed; this.y+=dy/dist*this.speed; }
-
+    else{ this.x+=dx/dist*move; this.y+=dy/dist*move; }
     enemies.forEach(e=>{
       if(this.dead) return;
       if(Math.hypot(e.x-this.x,e.y-this.y)<12){
-        const eHp=e.hp;
-        e.hp-=this.hp;
-        this.hp-=eHp;
+        const eHp=e.hp; e.hp-=this.hp; this.hp-=eHp;
         if(this.hp<=0) this.dead=true;
       }
     });
   }
-
   draw(){
     if(this.dead) return;
     ctx.fillStyle='#cc88ff';
-    ctx.beginPath();
-    ctx.arc(this.x,this.y,6,0,Math.PI*2);
-    ctx.fill();
-    ctx.strokeStyle='#ff88ff';
-    ctx.lineWidth=1;
-    ctx.stroke();
-    ctx.textAlign='center';
-    ctx.fillStyle='white';
-    ctx.font='10px sans-serif';
+    ctx.beginPath(); ctx.arc(this.x,this.y,6,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#ff88ff'; ctx.lineWidth=1; ctx.stroke();
+    ctx.textAlign='center'; ctx.fillStyle='white'; ctx.font='10px sans-serif';
     ctx.fillText(Math.floor(this.hp)+'/'+this.maxHp,this.x,this.y-12);
   }
 }
 
-// ── 적 클래스 ────────────────────────────────────────
 class Enemy{
   constructor(type='wanderer'){
-    this.type=type;
-    this.x=path[0].x; this.y=path[0].y;
+    this.type=type; this.x=path[0].x; this.y=path[0].y;
     this.i=1; this.hidden=false; this.isBoss=false;
-    if(type==='wanderer'){ this.hp=30;  this.maxHp=30;  this.speed=1;   this.color='red'; }
-    if(type==='thief'){    this.hp=15;  this.maxHp=15;  this.speed=2;   this.color='orange'; }
-    if(type==='knight'){   this.hp=150; this.maxHp=150; this.speed=0.6; this.color='blue'; }
-    if(type==='ninja'){    this.hp=50; this.maxHp=50; this.speed=2.3; this.color='purple'; this.hidden=true; }
-    if(type==='golem'){    this.hp=400; this.maxHp=400; this.speed=0.4; this.color='gray';   this.isBoss=true; }
-    if(type==='miniGolem'){this.hp=150; this.maxHp=150; this.speed=1;   this.color='lightgray'; }
+    if(type==='wanderer'){ this.hp=50;  this.maxHp=50;  this.speed=1;   this.color='red'; }
+    if(type==='thief'){    this.hp=25;  this.maxHp=25;  this.speed=2;   this.color='orange'; }
+    if(type==='knight'){   this.hp=200; this.maxHp=200; this.speed=0.6; this.color='blue'; }
+    if(type==='ninja'){    this.hp=100; this.maxHp=100; this.speed=2.3; this.color='purple'; this.hidden=true; }
+    if(type==='golem'){    this.hp=500; this.maxHp=500; this.speed=0.4; this.color='gray';   this.isBoss=true; }
+    if(type==='miniGolem'){this.hp=250; this.maxHp=250; this.speed=1;   this.color='lightgray'; }
   }
-  update(){
+  update(deltaMs){
     const t=path[this.i];
     const dx=t.x-this.x, dy=t.y-this.y;
     const dist=Math.hypot(dx,dy);
+    const move=this.speed*(deltaMs/FRAME_MS);
     if(dist<2){
       this.i++;
       if(this.i>=path.length){ hp-=this.hp; this.hp=0; }
     }else{
-      this.x+=dx/dist*this.speed;
-      this.y+=dy/dist*this.speed;
+      this.x+=dx/dist*move; this.y+=dy/dist*move;
     }
   }
   draw(){
@@ -287,7 +336,6 @@ function getEnemyInfo(e){
   return '';
 }
 
-// ── 웨이브 ────────────────────────────────────────────
 let waveQueue=[];
 function buildWaveQueue(){
   waveQueue=[];
@@ -315,12 +363,6 @@ function spawnEnemy(){
   enemies.push(new Enemy(waveQueue[spawnCount]));
   spawnCount++;
 }
-setInterval(()=>{ if(gameStarted) spawnEnemy(); },1000);
-setInterval(()=>{
-  if(!gameStarted||!waveStarted) return;
-  timeLeft--;
-  if(timeLeft<=0||(spawnCount>=spawnLimit&&enemies.length===0)) nextWave();
-},1000);
 
 function readyWave(){
   if(preparing||waveStarted) return;
@@ -338,36 +380,37 @@ function readyWave(){
       timerEl.textContent='';
       waveStarted=true; preparing=false;
       btn.style.display='none';
+      spawnAccum=0; timeAccum=0;
     }
   },1000);
 }
 
 function nextWave(){
-  if(wave>=15) return;
-  wave++;
-  timeLeft=(wave===10)?120:60;
-  spawnCount=0;
-  buildWaveQueue();
-  waveStarted=true;
+  if(wave>=15){
+    if(spawnCount>=spawnLimit&&enemies.length===0) showOverlay('clear');
+    return;
+  }
+  wave++; timeLeft=(wave===10)?120:60;
+  spawnCount=0; spawnAccum=0; timeAccum=0;
+  buildWaveQueue(); waveStarted=true;
 }
 
-// ── 타워 클래스 ──────────────────────────────────────
+// 쿨다운 단위: ms
 class Tower{
   constructor(x,y,type){
     this.x=x; this.y=y; this.type=type;
-    if(type==='fighter'){   this.range=50;  this.damage=15;  this.coolMax=90;  }
-    if(type==='archer'){    this.range=120; this.damage=50;  this.coolMax=150;  }
-    if(type==='cannon'){    this.range=100; this.damage=130; this.coolMax=300;  }
-    if(type==='torch'){     this.range=130; this.damage=0;   this.coolMax=0;   }
-    if(type==='puppeteer'){ this.range=0;   this.damage=0;   this.coolMax=900; }
-    this.baseRange=this.range;
-    this.cool=0;
+    // coolMax: ms 기준
+    if(type==='fighter'){   this.range=50;  this.damage=25;  this.coolMax=333;   } // ~3/s
+    if(type==='archer'){    this.range=120; this.damage=50;  this.coolMax=833;   } // ~1.2/s
+    if(type==='cannon'){    this.range=100; this.damage=100; this.coolMax=1500;  } // ~0.67/s
+    if(type==='torch'){     this.range=130; this.damage=0;   this.coolMax=0;     }
+    if(type==='puppeteer'){ this.range=0;   this.damage=0;   this.coolMax=20000; } // 20초
+    this.baseRange=this.range; this.cool=0;
   }
-
-  update(){
+  update(deltaMs){
     if(this.type==='torch'){
       enemies.forEach(e=>{
-        if(Math.hypot(e.x-this.x,e.y-this.y)<this.range && e.type==='ninja') e.hidden=false;
+        if(Math.hypot(e.x-this.x,e.y-this.y)<this.range&&e.type==='ninja') e.hidden=false;
       });
       towers.forEach(t=>{
         if(t===this||t.type==='torch') return;
@@ -375,15 +418,11 @@ class Tower{
       });
       return;
     }
-
     if(this.type==='puppeteer'){
-      if(this.cool>0){ this.cool--; return; }
-      dolls.push(new Doll());
-      this.cool=this.coolMax;
-      return;
+      if(this.cool>0){ this.cool-=deltaMs; return; }
+      dolls.push(new Doll()); this.cool=this.coolMax; return;
     }
-
-    if(this.cool>0){ this.cool--; return; }
+    if(this.cool>0){ this.cool-=deltaMs; return; }
     const target=enemies.find(e=>{
       if(!(Math.hypot(e.x-this.x,e.y-this.y)<this.range)) return false;
       if(e.type==='ninja'&&e.hidden) return false;
@@ -392,31 +431,23 @@ class Tower{
     if(!target) return;
     if(this.type==='cannon'){
       enemies.forEach(e=>{ if(Math.hypot(e.x-target.x,e.y-target.y)<40) e.hp-=this.damage; });
-    }else{
-      target.hp-=this.damage;
-    }
+    }else{ target.hp-=this.damage; }
     this.cool=this.coolMax;
   }
-
   draw(){
     ctx.fillStyle=
       this.type==='fighter'?'cyan':
       this.type==='archer'?'yellow':
       this.type==='cannon'?'orange':
       this.type==='puppeteer'?'#cc88ff':'pink';
-    ctx.beginPath();
-    ctx.arc(this.x,this.y,10,0,Math.PI*2);
-    ctx.fill();
-    if(selectedTower===this && this.range>0){
+    ctx.beginPath(); ctx.arc(this.x,this.y,10,0,Math.PI*2); ctx.fill();
+    if(selectedTower===this&&this.range>0){
       ctx.strokeStyle='white';
-      ctx.beginPath();
-      ctx.arc(this.x,this.y,this.range,0,Math.PI*2);
-      ctx.stroke();
+      ctx.beginPath(); ctx.arc(this.x,this.y,this.range,0,Math.PI*2); ctx.stroke();
     }
   }
 }
 
-// ── 캔버스 클릭 ──────────────────────────────────────
 canvas.addEventListener('click',e=>{
   const r=canvas.getBoundingClientRect();
   const x=e.clientX-r.left, y=e.clientY-r.top;
@@ -435,63 +466,49 @@ canvas.addEventListener('click',e=>{
   if(placingType==='puppeteer'&&isHill) return;
   if(!equipped.includes(placingType)) return;
   towers.push(new Tower(x,y,placingType));
-  gold-=cost;
-  placingType=null; selectedSlot=-1;
+  gold-=cost; placingType=null; selectedSlot=-1;
   renderSlotBar();
 });
 
-// ── 업데이트 ─────────────────────────────────────────
-function update(){
-  enemies.forEach(e=>e.update());
-  towers.forEach(t=>t.update());
-  dolls.forEach(d=>d.update());
-
+function update(deltaMs){
+  enemies.forEach(e=>e.update(deltaMs));
+  towers.forEach(t=>t.update(deltaMs));
+  dolls.forEach(d=>d.update(deltaMs));
   for(let i=dolls.length-1;i>=0;i--){
     if(dolls[i].dead) dolls.splice(i,1);
   }
-
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i];
     if(e.hp<=0){
       if(e.type==='golem'){
         for(let j=0;j<3;j++){
           const m=new Enemy('miniGolem');
-          m.x=e.x; m.y=e.y; m.i=e.i;
-          enemies.push(m);
+          m.x=e.x; m.y=e.y; m.i=e.i; enemies.push(m);
         }
       }
-      if(e.type==='wanderer')        gold+=10;
-      else if(e.type==='thief')      gold+=7;
-      else if(e.type==='knight')     gold+=15;
-      else if(e.type==='ninja')      gold+=15;
-      else if(e.type==='golem')      gold+=35;
-      else if(e.type==='miniGolem')  gold+=20;
+      if(e.type==='wanderer')       gold+=10;
+      else if(e.type==='thief')     gold+=7;
+      else if(e.type==='knight')    gold+=15;
+      else if(e.type==='ninja')     gold+=15;
+      else if(e.type==='golem')     gold+=35;
+      else if(e.type==='miniGolem') gold+=20;
       enemies.splice(i,1);
     }
   }
 }
 
-// ── 드로우 ───────────────────────────────────────────
 function drawPathBlockPreview(){
   if(!placingType) return;
-  ctx.save();
-  ctx.strokeStyle='rgba(255,0,0,0.35)';
-  ctx.lineWidth=PATH_BLOCK_RADIUS*2;
-  ctx.beginPath();
-  ctx.moveTo(path[0].x,path[0].y);
+  ctx.save(); ctx.strokeStyle='rgba(255,0,0,0.35)'; ctx.lineWidth=PATH_BLOCK_RADIUS*2;
+  ctx.beginPath(); ctx.moveTo(path[0].x,path[0].y);
   for(const p of path) ctx.lineTo(p.x,p.y);
-  ctx.stroke();
-  ctx.restore();
+  ctx.stroke(); ctx.restore();
 }
 
 function drawTowerBlockPreview(){
   if(!placingType) return;
-  ctx.save();
-  ctx.strokeStyle='rgba(255,0,0,0.35)';
-  ctx.lineWidth=2;
-  towers.forEach(t=>{
-    ctx.beginPath(); ctx.arc(t.x,t.y,TOWER_BLOCK_RADIUS,0,Math.PI*2); ctx.stroke();
-  });
+  ctx.save(); ctx.strokeStyle='rgba(255,0,0,0.35)'; ctx.lineWidth=2;
+  towers.forEach(t=>{ ctx.beginPath(); ctx.arc(t.x,t.y,TOWER_BLOCK_RADIUS,0,Math.PI*2); ctx.stroke(); });
   ctx.restore();
 }
 
@@ -499,10 +516,8 @@ function draw(){
   ctx.clearRect(0,0,600,400);
   drawPathBlockPreview();
   ctx.strokeStyle='orange'; ctx.lineWidth=4;
-  ctx.beginPath();
-  ctx.moveTo(path[0].x,path[0].y);
-  path.forEach(p=>ctx.lineTo(p.x,p.y));
-  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(path[0].x,path[0].y);
+  path.forEach(p=>ctx.lineTo(p.x,p.y)); ctx.stroke();
   drawTowerBlockPreview();
   ctx.fillStyle='rgba(255,255,0,0.3)';
   hillZones.forEach(z=>{ ctx.beginPath(); ctx.arc(z.x,z.y,z.r,0,Math.PI*2); ctx.fill(); });
@@ -511,29 +526,53 @@ function draw(){
   enemies.forEach(e=>e.draw());
   towers.forEach(t=>t.draw());
   dolls.forEach(d=>d.draw());
-
   if(placingType){
     const rangeMap={fighter:50,archer:120,cannon:100,puppeteer:0,torch:130};
     const range=rangeMap[placingType]||0;
     const blocked=isTooCloseToTower(mouseX,mouseY)||isOnPath(mouseX,mouseY);
     ctx.strokeStyle=blocked?'red':'white';
-    if(range>0){
-      ctx.beginPath(); ctx.arc(mouseX,mouseY,range,0,Math.PI*2); ctx.stroke();
-    }
+    if(range>0){ ctx.beginPath(); ctx.arc(mouseX,mouseY,range,0,Math.PI*2); ctx.stroke(); }
     ctx.fillStyle=blocked?'red':'white';
     ctx.beginPath(); ctx.arc(mouseX,mouseY,10,0,Math.PI*2); ctx.fill();
   }
 }
 
-// ── 게임 루프 ────────────────────────────────────────
 const goldEl=document.getElementById('gold');
 const hpEl=document.getElementById('hp');
 const waveEl=document.getElementById('wave');
 const timeEl=document.getElementById('time');
 
-function loop(){
+function loop(timestamp){
   if(!gameStarted){ requestAnimationFrame(loop); return; }
-  update(); draw();
+  if(gameOver) return;
+
+  if(lastTimestamp===null) lastTimestamp=timestamp;
+  const realDelta=Math.min(timestamp-lastTimestamp, 100);
+  lastTimestamp=timestamp;
+  const gameDelta=realDelta*gameSpeed;
+
+  if(gameSpeed>0){
+    // 스폰: 현실 1초 고정
+    spawnAccum+=realDelta;
+    while(spawnAccum>=SPAWN_MS){
+      spawnAccum-=SPAWN_MS;
+      spawnEnemy();
+    }
+    // 웨이브 타이머: 배속 적용
+    if(waveStarted){
+      timeAccum+=gameDelta;
+      while(timeAccum>=TIME_MS){
+        timeAccum-=TIME_MS;
+        timeLeft--;
+        if(timeLeft<=0||(spawnCount>=spawnLimit&&enemies.length===0)){ nextWave(); break; }
+      }
+    }
+    // 이동/전투: gameDelta를 그대로 전달 (ms 기반이므로 루프 반복 불필요)
+    update(gameDelta);
+    if(hp<=0){ showOverlay('lose'); return; }
+  }
+
+  draw();
   updateTowerCountUI();
   goldEl.textContent=gold;
   hpEl.textContent=hp;
@@ -542,22 +581,22 @@ function loop(){
   const boss=enemies.find(e=>e.isBoss);
   document.getElementById('bossBar').style.display=boss?'block':'none';
   if(boss) document.getElementById('bossHp').style.width=(boss.hp/boss.maxHp*100)+'%';
-  if(hp<=0){ alert('게임 오버'); location.reload(); }
   requestAnimationFrame(loop);
 }
 
 function startGame(){
   document.getElementById('startScreen').style.display='none';
   gameStarted=true;
-  buildWaveQueue();
-  waveStarted=false;
+  buildWaveQueue(); waveStarted=false;
+  lastTimestamp=null; spawnAccum=0; timeAccum=0;
   document.getElementById('readyBtn').disabled=false;
   document.getElementById('readyBtn').style.display='inline-block';
   renderSlotBar();
+  requestAnimationFrame(loop);
 }
 
 updateTowerCountUI();
-loop();
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
