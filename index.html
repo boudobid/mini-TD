@@ -30,9 +30,19 @@
   <button onclick="startGame()">게임 시작</button>
   <div style="margin-top:20px;">
     <button>🏆 업적</button>
-    <button>📖 적 도감</button>
+    <button onclick="toggleCodex()">📖 적 도감</button>
     <button onclick="toggleInventory()">🎒 인벤토리</button>
     <button>🛒 상점</button>
+  </div>
+  <div id="codexUI" style="display:none;margin-top:15px;background:#222;padding:14px;border:1px solid #555;border-radius:6px;max-width:420px;text-align:left;">
+    <h4 style="margin:0 0 10px;text-align:center;">📖 적 도감</h4>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:red;display:inline-block;border-radius:2px;"></span><b>방랑자</b> <small style="color:#aaa;">체력 50 · 보통 속도 · 기본 적</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:orange;display:inline-block;border-radius:2px;"></span><b>도둑</b> <small style="color:#aaa;">체력 25 · 매우 빠름</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:blue;display:inline-block;border-radius:2px;"></span><b>기사</b> <small style="color:#aaa;">체력 200 · 느림 · 탱커</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#8B4513;display:inline-block;border-radius:2px;"></span><b>기마병</b> <small style="color:#aaa;">체력 300 · 속도 1.5 · 승마(100 피해 시 기사로 변신)</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:purple;display:inline-block;border-radius:2px;"></span><b>닌자</b> <small style="color:#aaa;">체력 100 · 빠름 · 은신(횃불로 감지)</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:gray;display:inline-block;border-radius:2px;"></span><b>골렘</b> <small style="color:#aaa;">체력 500 · 매우 느림 · 죽으면 미니골렘 3마리로 분열</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:lightgray;display:inline-block;border-radius:2px;"></span><b>미니골렘</b> <small style="color:#aaa;">체력 250 · 골렘의 조각</small></div>
   </div>
   <div id="inventoryUI" style="display:none;margin-top:15px;background:#222;padding:10px;border:1px solid #555;">
     <h4>장착 타워 (최대 6)</h4>
@@ -45,10 +55,16 @@
     <button onclick="equipTower('puppeteer')">🎭 인형술사</button>
     <h4>🟨 언덕 설치</h4>
     <button onclick="equipTower('archer')">🏹 궁수</button>
+    <button onclick="equipTower('lightning')">⚡ 번개 마법사</button>
     <h4>🟥 특수 (길에 설치)</h4>
-    <button onclick="equipTower('wire')">🪢 가시 와이어 <small style="color:#aaa">(10초 쿨타임)</small></button>
+     <div id="wireSkillInfo" style="display:none;background:#1a1a1a;border:1px solid #555;border-radius:6px;padding:8px 12px;margin:4px 0;font-size:13px;color:#ccc;">
+       <span style="font-size:18px;">🪢</span> <b>가시 와이어</b><br>
+       <small style="color:#aaa;">경로에 설치 | 쿨타임 10초 | R키로 선택</small><br>
+       <small style="color:#FFD700;">최대 5회 밟히면 파괴 | 슬로우+출혈 5초 부여</small>
+     </div>
+     <button onclick="toggleWireInfo()">🪢 가시 와이어 <small style="color:#aaa">(10초 쿨타임)</small></button>
     <h4>🔒 엘리트</h4>
-    <button disabled>🔒 준비중</button>
+    <button onclick="equipTower('marionette')">🎪 마리오네트 <small style="color:#aaa;">(인형술사 5개 필요)</small></button>
   </div>
 </div>
 
@@ -67,7 +83,11 @@
   <span> | 체력: <span id="hp">200</span></span>
   <span> | 타워: <span id="towerCount">0</span>/45</span>
   <br>
-  <div id="slotBar"></div>
+  <div style="display:flex;align-items:center;justify-content:center;gap:20px;">
+    <div id="slotBar"></div>
+    <div id="skillBar"></div>
+  </div>
+
   <div id="speedBar" style="margin:6px auto;">
     <span style="font-size:13px;color:#aaa;">배속: </span>
     <button onclick="setSpeed(0)" id="spd0">⏸ 0배</button>
@@ -96,10 +116,11 @@ let gameOver=false, gameSpeed=1;
 let spawnTick=0, timeTick=0;
 const TICK_INTERVAL=60;
 
+// 가시 와이어 쿨타임 (프레임 기준, 60fps × 10초)
 const WIRE_COOLDOWN_FRAMES = 600;
-let wireCoolTick = 0;
+let wireCoolTick = 0; // 0이면 설치 가능, >0이면 쿨타임 중
 
-const equipped=[], towers=[], enemies=[], dolls=[], wires=[];
+const equipped=[], towers=[], enemies=[], dolls=[], wires=[], lightnings=[];
 const PATH_BLOCK_RADIUS=15, TOWER_BLOCK_RADIUS=20, MAX_SLOTS=6;
 let selectedSlot=-1;
 
@@ -109,7 +130,9 @@ const TOWER_META={
   cannon:    {label:'💣', name:'대포',     cost:250},
   torch:     {label:'🔥', name:'횃불',     cost:200},
   puppeteer: {label:'🎭', name:'인형술사', cost:300},
-  wire:      {label:'🪢', name:'가시 와이어', cost:80},
+  lightning:  {label:'⚡', name:'번개 마법사', cost:300},
+  marionette: {label:'🎪', name:'마리오네트', cost:500},
+  wire:       {label:'🪢', name:'가시 와이어', cost:80},
 };
 
 const path=[
@@ -158,6 +181,8 @@ function updateTowerCountUI(){
   document.getElementById('towerCount').textContent=towers.length+wires.length;
 }
 
+function updateWireCoolUI(){}
+
 function showOverlay(type){
   gameOver=true; gameStarted=false;
   const overlay=document.getElementById('gameOverlay');
@@ -182,12 +207,12 @@ function resetGame(){
   document.getElementById('startScreen').style.display='flex';
   gold=100; hp=200; wave=1; timeLeft=60;
   gameOver=false; gameStarted=false;
-  towers.length=0; enemies.length=0; dolls.length=0; equipped.length=0; wires.length=0;
+  towers.length=0; enemies.length=0; dolls.length=0; equipped.length=0; wires.length=0; lightnings.length=0;
   waveStarted=false; preparing=false; spawnCount=0;
   placingType=null; selectedSlot=-1; selectedTower=null;
   spawnTick=0; timeTick=0; wireCoolTick=0;
   buildWaveQueue();
-  renderSlotBar(); renderEquip();
+  renderSlotBar(); renderSkillSlot(); renderEquip();
   setSpeed(1);
   const btn=document.getElementById('readyBtn');
   btn.disabled=false; btn.style.display='inline-block';
@@ -200,14 +225,13 @@ function renderSlotBar(){
   for(let i=0;i<MAX_SLOTS;i++){
     const type=equipped[i]||null;
     const meta=type?TOWER_META[type]:null;
-    const isWireOnCool = type==='wire' && wireCoolTick>0;
     const slot=document.createElement('div');
     slot.style.cssText=
       'width:64px;height:64px;background:#222;'+
-      'border:2px solid '+(selectedSlot===i&&type&&!isWireOnCool?'#0f0':isWireOnCool?'#f44':'#555')+';'+
+      'border:2px solid '+(selectedSlot===i&&type?'#0f0':'#555')+';'+
       'border-radius:6px;display:flex;flex-direction:column;'+
       'align-items:center;justify-content:center;'+
-      'cursor:'+(type&&!isWireOnCool?'pointer':'default')+';'+
+      'cursor:'+(type?'pointer':'default')+';'+
       'position:relative;font-size:11px;color:#ccc;user-select:none;';
     const badge=document.createElement('span');
     badge.textContent=i+1;
@@ -220,13 +244,7 @@ function renderSlotBar(){
       price.textContent='💰'+meta.cost;
       price.style.cssText='font-size:10px;color:#FFD700;margin-top:2px;';
       slot.appendChild(icon); slot.appendChild(price);
-      if(isWireOnCool){
-        const coolLabel=document.createElement('div');
-        coolLabel.textContent=Math.ceil(wireCoolTick/60)+'s';
-        coolLabel.style.cssText='position:absolute;bottom:2px;right:4px;font-size:9px;color:#f88;';
-        slot.appendChild(coolLabel);
-      }
-      slot.onclick=()=>{ if(!isWireOnCool) selectSlot(i); };
+      // 클릭으로 슬롯 선택 비활성화 (숫자 키만 사용)
     }else{
       const empty=document.createElement('div');
       empty.textContent='─'; empty.style.cssText='font-size:18px;color:#444;';
@@ -236,20 +254,54 @@ function renderSlotBar(){
   }
 }
 
+function renderSkillSlot(){
+  const bar=document.getElementById('skillBar');
+  bar.innerHTML='';
+  const isCool=wireCoolTick>0;
+  const slot=document.createElement('div');
+  slot.style.cssText=
+    'width:64px;height:64px;background:#222;'+
+    'border:2px solid '+(placingType==='wire'&&!isCool?'#0f0':isCool?'#f44':'#555')+';'+
+    'border-radius:6px;display:flex;flex-direction:column;'+
+    'align-items:center;justify-content:center;'+
+    'cursor:'+(isCool?'default':'pointer')+';'+
+    'position:relative;font-size:11px;color:#ccc;user-select:none;';
+  const badge=document.createElement('span');
+  badge.textContent='R';
+  badge.style.cssText='position:absolute;top:2px;left:4px;font-size:9px;color:#888;';
+  slot.appendChild(badge);
+  const icon=document.createElement('div');
+  icon.textContent='🪢'; icon.style.fontSize='20px';
+  const price=document.createElement('div');
+  price.textContent='💰'+TOWER_META.wire.cost;
+  price.style.cssText='font-size:10px;color:#FFD700;margin-top:2px;';
+  slot.appendChild(icon); slot.appendChild(price);
+  slot.onclick=()=>{ if(!isCool) selectSkillWire(); };
+  bar.appendChild(slot);
+}
+
+function selectSkillWire(){
+  if(wireCoolTick>0) return;
+  if(placingType==='wire'){ placingType=null; }
+  else{ placingType='wire'; selectedSlot=-1; }
+  renderSkillSlot();
+}
+
 function selectSlot(i){
   if(!equipped[i]) return;
-  if(equipped[i]==='wire'&&wireCoolTick>0) return;
   if(selectedSlot===i){ selectedSlot=-1; placingType=null; }
   else{ selectedSlot=i; placingType=equipped[i]; }
-  renderSlotBar();
+  renderSkillSlot(); renderSlotBar();
 }
 
 document.addEventListener('keydown',e=>{
   const n=parseInt(e.key);
   if(n>=1&&n<=MAX_SLOTS) selectSlot(n-1);
+  if(e.key==='r'||e.key==='R') selectSkillWire();
 });
 
 function equipTower(type){
+  if(type==='wire'){ renderEquip(); return; } // 와이어는 항상 스킬 슬롯에 표시됨
   if(equipped.length>=MAX_SLOTS||equipped.includes(type)) return;
   equipped.push(type);
   renderEquip(); renderSlotBar();
@@ -275,13 +327,29 @@ function toggleInventory(){
   ui.style.display=ui.style.display==='none'?'block':'none';
 }
 
+function toggleCodex(){
+  const el=document.getElementById('codexUI');
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+
+function toggleWireInfo(){
+  const el=document.getElementById('wireSkillInfo');
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+
+// 가시 와이어 클래스
 class Wire {
   constructor(x, y){
     this.x=x; this.y=y;
-    this.stepCount=0; this.maxSteps=5;
-    this.destroyed=false; this.radius=10;
+    this.stepCount=0;
+    this.maxSteps=5;
+    this.destroyed=false;
+    this.radius=10;
+    // 적이 이미 이 와이어를 밟은 것으로 등록된 id 집합
     this.triggered=new Set();
-    this.BLEED_TICKS=60*5; this.SLOW_TICKS=60*5;
+    // 출혈 틱 누적 (60fps 기준)
+    this.BLEED_TICKS = 60*5; // 5초
+    this.SLOW_TICKS  = 60*5;
   }
   update(){
     if(this.destroyed) return;
@@ -291,17 +359,25 @@ class Wire {
       if(Math.hypot(e.x-this.x, e.y-this.y)<this.radius+6){
         this.triggered.add(e);
         this.stepCount++;
-        e.slowTick  = Math.max(e.slowTick  ||0, this.SLOW_TICKS);
-        e.bleedTick = Math.max(e.bleedTick ||0, this.BLEED_TICKS);
-        if(this.stepCount>=this.maxSteps){ this.destroyed=true; break; }
+        // 슬로우/출혈 적용
+        e.slowTick  = Math.max(e.slowTick  || 0, this.SLOW_TICKS);
+        e.bleedTick = Math.max(e.bleedTick || 0, this.BLEED_TICKS);
+        if(this.stepCount>=this.maxSteps){
+          this.destroyed=true;
+          break;
+        }
       }
     }
-    for(const e of this.triggered){ if(e.hp<=0) this.triggered.delete(e); }
+    // 죽은 적은 triggered에서 정리
+    for(const e of this.triggered){
+      if(e.hp<=0) this.triggered.delete(e);
+    }
   }
   draw(){
     if(this.destroyed) return;
     ctx.save();
-    ctx.strokeStyle='#aaff44'; ctx.lineWidth=2;
+    ctx.strokeStyle='#aaff44';
+    ctx.lineWidth=2;
     ctx.beginPath(); ctx.moveTo(this.x-8,this.y-8); ctx.lineTo(this.x+8,this.y+8); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(this.x+8,this.y-8); ctx.lineTo(this.x-8,this.y+8); ctx.stroke();
     ctx.beginPath(); ctx.arc(this.x,this.y,this.radius,0,Math.PI*2); ctx.stroke();
@@ -312,9 +388,9 @@ class Wire {
 }
 
 class Doll{
-  constructor(){
+  constructor(hp=250){
     this.x=path[path.length-1].x; this.y=path[path.length-1].y;
-    this.hp=250; this.maxHp=250; this.speed=0.8;
+    this.hp=hp; this.maxHp=hp; this.speed=0.8;
     this.dead=false; this.pathIndex=path.length-2;
   }
   update(){
@@ -347,26 +423,37 @@ class Enemy{
   constructor(type='wanderer'){
     this.type=type; this.x=path[0].x; this.y=path[0].y;
     this.i=1; this.hidden=false; this.isBoss=false;
-    this.slowTick=0; this.bleedTick=0; this.bleedAccum=0;
+    this.slowTick=0; this.bleedTick=0; this.bleedAccum=0; this.stunTick=0;
     if(type==='wanderer'){ this.hp=50;  this.maxHp=50;  this.baseSpeed=1;   this.color='red'; }
     if(type==='thief'){    this.hp=25;  this.maxHp=25;  this.baseSpeed=2;   this.color='orange'; }
     if(type==='knight'){   this.hp=200; this.maxHp=200; this.baseSpeed=0.6; this.color='blue'; }
+    if(type==='cavalry'){  this.hp=300; this.maxHp=300; this.baseSpeed=1.5; this.color='#8B4513'; }
     if(type==='ninja'){    this.hp=100; this.maxHp=100; this.baseSpeed=2.3; this.color='purple'; this.hidden=true; }
-    if(type==='golem'){    this.hp=500; this.maxHp=500; this.baseSpeed=0.4; this.color='gray';   this.isBoss=true; }
+    if(type==='golem'){    this.hp=500; this.maxHp=500; this.baseSpeed=0.4; this.color='gray';   this.isBoss=(wave===10); }
     if(type==='miniGolem'){this.hp=250; this.maxHp=250; this.baseSpeed=1;   this.color='lightgray'; }
     this.speed=this.baseSpeed;
   }
   update(){
+    // 기마병 → 기사 변신 (100 피해 시 = hp 200 이하)
+    if(this.type==='cavalry' && this.hp<=200){
+      this.type='knight'; this.maxHp=200; this.hp=Math.min(this.hp,200);
+      this.baseSpeed=0.6; this.speed=0.6; this.color='blue';
+    }
+    // 슬로우
     if(this.slowTick>0){
       this.slowTick--;
       this.speed=this.baseSpeed*0.7;
       if(this.slowTick<=0) this.speed=this.baseSpeed;
     }
+    // 출혈: 60틱마다 1 피해
     if(this.bleedTick>0){
       this.bleedTick--;
       this.bleedAccum++;
       if(this.bleedAccum>=60){ this.hp-=1; this.bleedAccum=0; }
     }
+    // 번개 스턴: 멈춤
+    if(this.stunTick>0){ this.stunTick--; return; }
+
     const t=path[this.i];
     const dx=t.x-this.x, dy=t.y-this.y;
     const dist=Math.hypot(dx,dy);
@@ -380,10 +467,17 @@ class Enemy{
   draw(){
     ctx.fillStyle=this.color;
     ctx.fillRect(this.x-6,this.y-6,12,12);
+    // 슬로우/출혈 링 표시
     if(this.slowTick>0||this.bleedTick>0){
       ctx.save();
       ctx.strokeStyle='#aaff44'; ctx.lineWidth=1.5;
       ctx.beginPath(); ctx.arc(this.x,this.y,9,0,Math.PI*2); ctx.stroke();
+      ctx.restore();
+    }
+    if(this.stunTick>0){
+      ctx.save();
+      ctx.strokeStyle='#66ccff'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(this.x,this.y,11,0,Math.PI*2); ctx.stroke();
       ctx.restore();
     }
     ctx.textAlign='center';
@@ -395,6 +489,7 @@ class Enemy{
 }
 
 function getEnemyInfo(e){
+  if(e.type==='cavalry')   return '승마';
   if(e.type==='ninja')     return '은신';
   if(e.type==='golem')     return '보스/분열';
   if(e.type==='miniGolem') return '조각';
@@ -415,11 +510,11 @@ function buildWaveQueue(){
   else if(w===8){ for(let i=0;i<15;i++) waveQueue.push('wanderer'); for(let i=0;i<15;i++) waveQueue.push('thief'); for(let i=0;i<15;i++) waveQueue.push('knight'); }
   else if(w===9)  for(let i=0;i<10;i++) waveQueue.push('ninja');
   else if(w===10) waveQueue.push('golem');
-  else if(w===11){ for(let i=0;i<15;i++) waveQueue.push('wanderer'); for(let i=0;i<10;i++) waveQueue.push('thief'); for(let i=0;i<5;i++) waveQueue.push('knight'); }
-  else if(w===12){ for(let i=0;i<10;i++) waveQueue.push('ninja'); for(let i=0;i<10;i++) waveQueue.push('thief'); }
-  else if(w===13) for(let i=0;i<15;i++) waveQueue.push('knight');
-  else if(w===14) for(let i=0;i<20;i++) waveQueue.push('ninja');
-  else if(w===15){ for(let i=0;i<10;i++) waveQueue.push('knight'); for(let i=0;i<15;i++) waveQueue.push('ninja'); }
+  else if(w===11){ for(let i=0;i<15;i++) waveQueue.push('wanderer'); for(let i=0;i<10;i++) waveQueue.push('thief'); for(let i=0;i<3;i++) waveQueue.push('cavalry'); for(let i=0;i<5;i++) waveQueue.push('knight'); }
+  else if(w===12){ for(let i=0;i<10;i++) waveQueue.push('ninja'); for(let i=0;i<10;i++) waveQueue.push('thief'); waveQueue.push('golem'); }
+  else if(w===13){ for(let i=0;i<15;i++) waveQueue.push('knight'); for(let i=0;i<4;i++) waveQueue.push('cavalry'); for(let i=0;i<2;i++) waveQueue.push('golem'); }
+  else if(w===14){ for(let i=0;i<20;i++) waveQueue.push('ninja'); for(let i=0;i<2;i++) waveQueue.push('golem'); }
+  else if(w===15){ for(let i=0;i<10;i++) waveQueue.push('knight'); for(let i=0;i<6;i++) waveQueue.push('cavalry'); for(let i=0;i<15;i++) waveQueue.push('ninja'); for(let i=0;i<3;i++) waveQueue.push('golem'); }
   spawnLimit=waveQueue.length;
 }
 
@@ -436,10 +531,10 @@ function readyWave(){
   const timerEl=document.getElementById('readyTimer');
   btn.disabled=true;
   let count=5;
-  timerEl.textContent=` (${count})`;
+  timerEl.textContent=' ('+count+')';
   const countdown=setInterval(()=>{
     count--;
-    timerEl.textContent=` (${count})`;
+    timerEl.textContent=' ('+count+')';
     if(count<=0){
       clearInterval(countdown);
       timerEl.textContent='';
@@ -466,7 +561,9 @@ class Tower{
     if(type==='archer'){    this.range=120; this.damage=50;  this.coolMax=50;  }
     if(type==='cannon'){    this.range=100; this.damage=100; this.coolMax=90;  }
     if(type==='torch'){     this.range=130; this.damage=0;   this.coolMax=0;   }
-    if(type==='puppeteer'){ this.range=0;   this.damage=0;   this.coolMax=1200; }
+    if(type==='puppeteer'){   this.range=0;   this.damage=0;   this.coolMax=1200; }
+    if(type==='lightning'){   this.range=150; this.damage=50;  this.coolMax=240; }
+    if(type==='marionette'){  this.range=150; this.damage=0;   this.coolMax=1200; }
     this.baseRange=this.range; this.cool=0;
   }
   update(){
@@ -483,6 +580,38 @@ class Tower{
     if(this.type==='puppeteer'){
       if(this.cool>0){ this.cool--; return; }
       dolls.push(new Doll()); this.cool=this.coolMax; return;
+    }
+    if(this.type==='lightning'){
+      if(this.cool>0){ this.cool--; return; }
+      // 사거리 내 비은신 적만 대상
+      const inRange=enemies.filter(e=>Math.hypot(e.x-this.x,e.y-this.y)<this.range&&!(e.hidden&&e.type==='ninja'));
+      if(inRange.length===0) return;
+      let target=inRange[0];
+      for(const e of inRange){ if(e.i>target.i) target=e; }
+      target.hp-=this.damage;
+      target.stunTick=Math.max(target.stunTick,30); // 0.5초 멈춤
+      const chain=inRange
+        .filter(e=>e!==target)
+        .sort((a,b)=>Math.hypot(a.x-target.x,a.y-target.y)-Math.hypot(b.x-target.x,b.y-target.y))
+        .slice(0,3);
+      chain.forEach(e=>{ e.hp-=10; });
+      lightnings.push({segments:[[this.x,this.y,target.x,target.y],...chain.map(e=>[target.x,target.y,e.x,e.y])],life:12});
+      this.cool=this.coolMax; return;
+    }
+    if(this.type==='marionette'){
+      // 은신 감지: 사거리 내 닌자 hidden 해제
+      enemies.forEach(e=>{
+        if(Math.hypot(e.x-this.x,e.y-this.y)<this.range&&e.type==='ninja') e.hidden=false;
+      });
+      if(this.cool>0){ this.cool--; return; }
+      // 사거리 내 모든 적 공격 (50 데미지) + 1초 스턴
+      const hits=enemies.filter(e=>Math.hypot(e.x-this.x,e.y-this.y)<this.range);
+      if(hits.length===0) return;
+      hits.forEach(e=>{ e.hp-=50; e.stunTick=Math.max(e.stunTick,60); });
+      // 마리오네트 인형 소환 (체력 400)
+      dolls.push(new Doll(400));
+      lightnings.push({segments:hits.map(e=>[this.x,this.y,e.x,e.y]),life:15});
+      this.cool=this.coolMax; return;
     }
     if(this.cool>0){ this.cool--; return; }
     const target=enemies.find(e=>{
@@ -501,6 +630,8 @@ class Tower{
       this.type==='fighter'?'cyan':
       this.type==='archer'?'yellow':
       this.type==='cannon'?'orange':
+      this.type==='lightning'?'#66ccff':
+      this.type==='marionette'?'#ff44aa':
       this.type==='puppeteer'?'#cc88ff':'pink';
     ctx.beginPath(); ctx.arc(this.x,this.y,10,0,Math.PI*2); ctx.fill();
     if(selectedTower===this&&this.range>0){
@@ -528,7 +659,7 @@ canvas.addEventListener('click',e=>{
     gold-=cost;
     wireCoolTick=WIRE_COOLDOWN_FRAMES;
     placingType=null; selectedSlot=-1;
-    renderSlotBar();
+    renderSkillSlot();
     return;
   }
 
@@ -539,15 +670,36 @@ canvas.addEventListener('click',e=>{
   if(placingType==='cannon'&&isHill) return;
   if(placingType==='torch'&&isHill) return;
   if(placingType==='puppeteer'&&isHill) return;
-  if(!equipped.includes(placingType)) return;
+  if(placingType==='marionette'&&isHill) return;
+  if(placingType==='lightning'&&!isHill) return;
+  if(placingType==='marionette'){
+    // 설치 조건: 현재 설치된 인형술사 5개 이상
+    const puppeteers=towers.filter(t=>t.type==='puppeteer');
+    if(puppeteers.length<5) return;
+    // 인형술사 5개 삭제
+    for(let j=0;j<5;j++){
+      const idx=towers.indexOf(puppeteers[j]);
+      if(idx!==-1) towers.splice(idx,1);
+    }
+  }
+  if(placingType!=='marionette'&&!equipped.includes(placingType)) return;
+  if(placingType==='marionette'&&!equipped.includes(placingType)) return;
   towers.push(new Tower(x,y,placingType));
   gold-=cost; placingType=null; selectedSlot=-1;
   renderSlotBar();
 });
 
 function update(){
-  if(wireCoolTick>0) wireCoolTick--;
+  // 와이어 쿨타임 감소 (준비 시간에는 정지)
+  if(wireCoolTick>0 && !preparing) wireCoolTick--;
 
+  // 번개 이펙트 수명
+  for(let i=lightnings.length-1;i>=0;i--){
+    lightnings[i].life--;
+    if(lightnings[i].life<=0) lightnings.splice(i,1);
+  }
+
+  // 와이어 업데이트
   wires.forEach(w=>w.update());
   for(let i=wires.length-1;i>=0;i--){
     if(wires[i].destroyed) wires.splice(i,1);
@@ -571,6 +723,7 @@ function update(){
       if(e.type==='wanderer')       gold+=10;
       else if(e.type==='thief')     gold+=7;
       else if(e.type==='knight')    gold+=15;
+      else if(e.type==='cavalry')   gold+=20;
       else if(e.type==='ninja')     gold+=15;
       else if(e.type==='golem')     gold+=35;
       else if(e.type==='miniGolem') gold+=20;
@@ -627,8 +780,15 @@ function draw(){
   enemies.forEach(e=>e.draw());
   towers.forEach(t=>t.draw());
   dolls.forEach(d=>d.draw());
+  // 번개 이펙트
+  ctx.save();
+  ctx.strokeStyle='#aef'; ctx.lineWidth=2; ctx.shadowColor='#66ccff'; ctx.shadowBlur=8;
+  lightnings.forEach(l=>{
+    l.segments.forEach(s=>{ ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(s[2],s[3]); ctx.stroke(); });
+  });
+  ctx.restore();
   if(placingType&&placingType!=='wire'){
-    const rangeMap={fighter:50,archer:120,cannon:100,puppeteer:0,torch:130};
+    const rangeMap={fighter:50,archer:120,cannon:100,puppeteer:0,torch:130,lightning:150,marionette:150};
     const range=rangeMap[placingType]||0;
     const blocked=isTooCloseToTower(mouseX,mouseY)||isOnPath(mouseX,mouseY);
     ctx.strokeStyle=blocked?'red':'white';
@@ -649,11 +809,15 @@ function loop(){
 
   for(let i=0;i<gameSpeed;i++){
     spawnTick++;
-    if(spawnTick>=TICK_INTERVAL){ spawnTick=0; spawnEnemy(); }
+    if(spawnTick>=TICK_INTERVAL){
+      spawnTick=0;
+      spawnEnemy();
+    }
     if(waveStarted){
       timeTick++;
       if(timeTick>=TICK_INTERVAL){
-        timeTick=0; timeLeft--;
+        timeTick=0;
+        timeLeft--;
         if(timeLeft<=0||(spawnCount>=spawnLimit&&enemies.length===0)) nextWave();
       }
     }
@@ -661,6 +825,8 @@ function loop(){
     if(hp<=0){ showOverlay('lose'); return; }
   }
 
+  renderSlotBar();
+  renderSkillSlot();
   draw();
   updateTowerCountUI();
   goldEl.textContent=gold;
@@ -679,7 +845,7 @@ function startGame(){
   buildWaveQueue(); waveStarted=false;
   document.getElementById('readyBtn').disabled=false;
   document.getElementById('readyBtn').style.display='inline-block';
-  renderSlotBar();
+  renderSlotBar(); renderSkillSlot();
   loop();
 }
 
