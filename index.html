@@ -29,11 +29,12 @@
   <h1>Mini Tower Defense</h1>
   <button onclick="startGame()">게임 시작</button>
   <div style="margin-top:20px;">
-    <button>🏆 업적</button>
+    <button onclick="toggleAchievements()">🏆 업적</button>
     <button onclick="toggleCodex()">📖 적 도감</button>
     <button onclick="toggleInventory()">🎒 인벤토리</button>
-    <button>🛒 상점</button>
-  </div>
+    <button onclick="toggleShop()">🛒 상점</button>
+    </div>
+    <div style="margin-top:10px;color:#FFD700;font-size:15px;">💰 보유 골드: <span id="persistentGoldDisplay">0</span></div>
   <div id="codexUI" style="display:none;margin-top:15px;background:#222;padding:14px;border:1px solid #555;border-radius:6px;max-width:420px;text-align:left;">
     <h4 style="margin:0 0 10px;text-align:center;">📖 적 도감</h4>
     <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:red;display:inline-block;border-radius:2px;"></span><b>방랑자</b> <small style="color:#aaa;">체력 50 · 보통 속도 · 기본 적</small></div>
@@ -49,24 +50,34 @@
     <div id="equipList"></div>
     <hr>
     <h4>🟩 지상 설치</h4>
-    <button onclick="equipTower('fighter')">🗡 파이터</button>
-    <button onclick="equipTower('cannon')">💣 대포</button>
-    <button onclick="equipTower('torch')">🔥 횃불</button>
-    <button onclick="equipTower('puppeteer')">🎭 인형술사</button>
+    <button id="inv_fighter" onclick="equipTower('fighter')">🗡 파이터</button>
+    <button id="inv_cannon" onclick="equipTower('cannon')">💣 대포</button>
+    <button id="inv_torch" onclick="equipTower('torch')">🔥 횃불</button>
+    <button id="inv_puppeteer" onclick="equipTower('puppeteer')">🎭 인형술사</button>
     <h4>🟨 언덕 설치</h4>
-    <button onclick="equipTower('archer')">🏹 궁수</button>
-    <button onclick="equipTower('lightning')">⚡ 번개 마법사</button>
+    <button id="inv_archer" onclick="equipTower('archer')">🏹 궁수</button>
+    <button id="inv_lightning" onclick="equipTower('lightning')">⚡ 번개 마법사</button>
     <h4>🟥 특수 (길에 설치)</h4>
      <div id="wireSkillInfo" style="display:none;background:#1a1a1a;border:1px solid #555;border-radius:6px;padding:8px 12px;margin:4px 0;font-size:13px;color:#ccc;">
        <span style="font-size:18px;">🪢</span> <b>가시 와이어</b><br>
        <small style="color:#aaa;">경로에 설치 | 쿨타임 10초 | R키로 선택</small><br>
        <small style="color:#FFD700;">최대 5회 밟히면 파괴 | 슬로우+출혈 5초 부여</small>
      </div>
-     <button onclick="toggleWireInfo()">🪢 가시 와이어 <small style="color:#aaa">(10초 쿨타임)</small></button>
-    <h4>🔒 엘리트</h4>
-    <button onclick="equipTower('marionette')">🎪 마리오네트 <small style="color:#aaa;">(인형술사 5개 필요)</small></button>
-  </div>
-</div>
+     <button id="inv_wire" onclick="equipTower('wire')">🪢 가시 와이어 <small style="color:#aaa" id="wireEquipHint">(미장착 · R키)</small></button>
+     <h4>🔒 엘리트</h4>
+     <button id="inv_marionette" onclick="equipTower('marionette')">🎪 마리오네트 <small style="color:#aaa;">(역돌격 업적 필요)</small></button>
+     </div>
+     <div id="shopUI" style="display:none;margin-top:15px;background:#222;padding:14px;border:1px solid #555;border-radius:6px;max-width:420px;text-align:left;">
+     <h4 style="margin:0 0 8px;text-align:center;">🛒 상점</h4>
+     <div style="text-align:center;margin-bottom:8px;">💰 보유 골드: <span id="shopGold" style="color:#FFD700;">0</span></div>
+     <div id="shopList"></div>
+     <small style="color:#888;display:block;margin-top:6px;text-align:center;">게임 클리어/진행 시 골드를 획득합니다.</small>
+     </div>
+     <div id="achievementsUI" style="display:none;margin-top:15px;background:#222;padding:14px;border:1px solid #555;border-radius:6px;max-width:420px;text-align:left;">
+     <h4 style="margin:0 0 8px;text-align:center;">🏆 업적</h4>
+     <div id="achievementsList"></div>
+     </div>
+     </div>
 
 <div id="gameOverlay">
   <div id="overlayMsg" style="font-size:52px;font-weight:bold;margin-bottom:12px;text-shadow:0 0 20px currentColor;"></div>
@@ -119,6 +130,7 @@ const TICK_INTERVAL=60;
 // 가시 와이어 쿨타임 (프레임 기준, 60fps × 10초)
 const WIRE_COOLDOWN_FRAMES = 600;
 let wireCoolTick = 0; // 0이면 설치 가능, >0이면 쿨타임 중
+let wireEquipped = false; // 가시 와이어 장착 여부
 
 const equipped=[], towers=[], enemies=[], dolls=[], wires=[], lightnings=[];
 const PATH_BLOCK_RADIUS=15, TOWER_BLOCK_RADIUS=20, MAX_SLOTS=6;
@@ -133,6 +145,26 @@ const TOWER_META={
   lightning:  {label:'⚡', name:'번개 마법사', cost:300},
   marionette: {label:'🎪', name:'마리오네트', cost:500},
   wire:       {label:'🪢', name:'가시 와이어', cost:80},
+};
+
+// 영구 저장 (상점 재화, 해금, 업적)
+function loadPersistent(){
+  return {
+    gold: parseInt(localStorage.getItem('mtd_gold')||'300'),
+    unlocked: JSON.parse(localStorage.getItem('mtd_unlocked')||'["fighter","archer"]'),
+    achievements: JSON.parse(localStorage.getItem('mtd_achievements')||'{}')
+  };
+}
+function savePersistent(){
+  localStorage.setItem('mtd_gold',persistent.gold);
+  localStorage.setItem('mtd_unlocked',JSON.stringify(persistent.unlocked));
+  localStorage.setItem('mtd_achievements',JSON.stringify(persistent.achievements));
+}
+let persistent=loadPersistent();
+
+const SHOP_PRICES={ cannon:150, torch:200, puppeteer:300, lightning:400, wire:150 };
+const ACHIEVEMENTS={
+  counter_charge:{ name:'역돌격', desc:'최종 보스를 인형의 박치기 피해로 처치' }
 };
 
 const path=[
@@ -192,12 +224,15 @@ function showOverlay(type){
     overlay.style.background='rgba(60,0,0,0.88)';
     msg.style.color='#ff4444';
     msg.textContent='💀 게임 오버';
-    sub.textContent='웨이브 '+wave+'에서 기지가 함락되었습니다.';
+    const reward=wave*5;
+    sub.textContent='웨이브 '+wave+'에서 기지가 함락되었습니다. +'+reward+' 골드 획득.';
+    persistent.gold+=reward; savePersistent();
   } else {
     overlay.style.background='rgba(40,35,0,0.90)';
     msg.style.color='#FFD700';
     msg.textContent='🏆 게임 클리어!';
-    sub.textContent='모든 웨이브를 막아냈습니다! 축하합니다!';
+    sub.textContent='모든 웨이브를 막아냈습니다! +100 골드 획득!';
+    persistent.gold+=100; savePersistent();
   }
   overlay.style.display='flex';
 }
@@ -210,9 +245,10 @@ function resetGame(){
   towers.length=0; enemies.length=0; dolls.length=0; equipped.length=0; wires.length=0; lightnings.length=0;
   waveStarted=false; preparing=false; spawnCount=0;
   placingType=null; selectedSlot=-1; selectedTower=null;
-  spawnTick=0; timeTick=0; wireCoolTick=0;
+  spawnTick=0; timeTick=0; wireCoolTick=0; wireEquipped=false;
   buildWaveQueue();
   renderSlotBar(); renderSkillSlot(); renderEquip();
+  renderPersistent(); renderInventoryButtons();
   setSpeed(1);
   const btn=document.getElementById('readyBtn');
   btn.disabled=false; btn.style.display='inline-block';
@@ -257,6 +293,7 @@ function renderSlotBar(){
 function renderSkillSlot(){
   const bar=document.getElementById('skillBar');
   bar.innerHTML='';
+  if(!wireEquipped) return;
   const isCool=wireCoolTick>0;
   const slot=document.createElement('div');
   slot.style.cssText=
@@ -281,6 +318,7 @@ function renderSkillSlot(){
 }
 
 function selectSkillWire(){
+  if(!wireEquipped) return;
   if(wireCoolTick>0) return;
   if(placingType==='wire'){ placingType=null; }
   else{ placingType='wire'; selectedSlot=-1; }
@@ -301,13 +339,20 @@ document.addEventListener('keydown',e=>{
 });
 
 function equipTower(type){
-  if(type==='wire'){ renderEquip(); return; } // 와이어는 항상 스킬 슬롯에 표시됨
+  if(type==='wire'){
+    if(!persistent.unlocked.includes('wire')) return;
+    wireEquipped=!wireEquipped; renderEquip(); renderSkillSlot(); return;
+  }
+  if(type==='marionette'&&!persistent.achievements['counter_charge']) return;
+  if(!persistent.unlocked.includes(type)) return;
   if(equipped.length>=MAX_SLOTS||equipped.includes(type)) return;
   equipped.push(type);
   renderEquip(); renderSlotBar();
 }
 
 function renderEquip(){
+  const hint=document.getElementById('wireEquipHint');
+  if(hint) hint.textContent=wireEquipped?'(장착됨 ✓)':'(미장착 · R키)';
   const el=document.getElementById('equipList');
   el.innerHTML='';
   equipped.forEach((t,i)=>{
@@ -325,6 +370,7 @@ function renderEquip(){
 function toggleInventory(){
   const ui=document.getElementById('inventoryUI');
   ui.style.display=ui.style.display==='none'?'block':'none';
+  if(ui.style.display==='block') renderInventoryButtons();
 }
 
 function toggleCodex(){
@@ -335,6 +381,93 @@ function toggleCodex(){
 function toggleWireInfo(){
   const el=document.getElementById('wireSkillInfo');
   el.style.display=el.style.display==='none'?'block':'none';
+}
+
+function toggleShop(){
+  const el=document.getElementById('shopUI');
+  el.style.display=el.style.display==='none'?'block':'none';
+  if(el.style.display==='block') renderShop();
+}
+
+function toggleAchievements(){
+  const el=document.getElementById('achievementsUI');
+  el.style.display=el.style.display==='none'?'block':'none';
+  if(el.style.display==='block') renderAchievements();
+}
+
+function renderPersistent(){
+  const g=document.getElementById('persistentGoldDisplay');
+  if(g) g.textContent=persistent.gold;
+}
+
+function renderShop(){
+  const sg=document.getElementById('shopGold');
+  if(sg) sg.textContent=persistent.gold;
+  const el=document.getElementById('shopList');
+  if(!el) return;
+  el.innerHTML='';
+  Object.keys(SHOP_PRICES).forEach(type=>{
+    const meta=TOWER_META[type];
+    const unlocked=persistent.unlocked.includes(type);
+    const price=SHOP_PRICES[type];
+    const div=document.createElement('div');
+    div.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:6px;border:1px solid #555;margin:4px 0;border-radius:4px;';
+    const label=document.createElement('span');
+    label.textContent=meta.label+' '+meta.name;
+    div.appendChild(label);
+    const btn=document.createElement('button');
+    if(unlocked){ btn.textContent='✓ 해금됨'; btn.disabled=true; }
+    else if(persistent.gold<price){ btn.textContent='💰'+price+' (부족)'; btn.disabled=true; }
+    else{ btn.textContent='💰'+price+' 구매'; btn.onclick=()=>buyTower(type); }
+    div.appendChild(btn);
+    el.appendChild(div);
+  });
+  const mMeta=TOWER_META['marionette'];
+  const mDiv=document.createElement('div');
+  mDiv.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:6px;border:1px solid #555;margin:4px 0;border-radius:4px;';
+  const mLabel=document.createElement('span');
+  mLabel.textContent=mMeta.label+' '+mMeta.name;
+  mDiv.appendChild(mLabel);
+  const mBtn=document.createElement('button');
+  if(persistent.achievements['counter_charge']){ mBtn.textContent='✓ 업적 해금'; mBtn.disabled=true; }
+  else{ mBtn.textContent='🔒 역돌격 필요'; mBtn.disabled=true; }
+  mDiv.appendChild(mBtn);
+  el.appendChild(mDiv);
+}
+
+function buyTower(type){
+  const price=SHOP_PRICES[type];
+  if(persistent.gold<price||persistent.unlocked.includes(type)) return;
+  persistent.gold-=price;
+  persistent.unlocked.push(type);
+  savePersistent();
+  renderShop(); renderPersistent(); renderInventoryButtons();
+}
+
+function renderAchievements(){
+  const el=document.getElementById('achievementsList');
+  if(!el) return;
+  el.innerHTML='';
+  Object.keys(ACHIEVEMENTS).forEach(key=>{
+    const a=ACHIEVEMENTS[key];
+    const earned=persistent.achievements[key];
+    const div=document.createElement('div');
+    div.style.cssText='padding:8px;border:1px solid '+(earned?'#FFD700':'#555')+';margin:4px 0;border-radius:4px;background:'+(earned?'#332b00':'#1a1a1a')+';';
+    div.innerHTML=(earned?'🏆':'🔒')+' <b>'+a.name+'</b><br><small style="color:#aaa;">'+a.desc+'</small>';
+    el.appendChild(div);
+  });
+}
+
+function renderInventoryButtons(){
+  const types=['fighter','cannon','torch','puppeteer','archer','lightning','wire','marionette'];
+  types.forEach(t=>{
+    const btn=document.getElementById('inv_'+t);
+    if(!btn) return;
+    let unlocked=persistent.unlocked.includes(t);
+    if(t==='marionette') unlocked=!!persistent.achievements['counter_charge'];
+    btn.disabled=!unlocked;
+    btn.style.opacity=unlocked?'1':'0.4';
+  });
 }
 
 // 가시 와이어 클래스
@@ -405,6 +538,7 @@ class Doll{
       if(this.dead) return;
       if(Math.hypot(e.x-this.x,e.y-this.y)<12){
         const eHp=e.hp; e.hp-=this.hp; this.hp-=eHp;
+        if(e.hp<=0) e.killedByDoll=true;
         if(this.hp<=0) this.dead=true;
       }
     });
@@ -563,8 +697,8 @@ class Tower{
     if(type==='torch'){     this.range=130; this.damage=0;   this.coolMax=0;   }
     if(type==='puppeteer'){   this.range=0;   this.damage=0;   this.coolMax=1200; }
     if(type==='lightning'){   this.range=150; this.damage=50;  this.coolMax=240; }
-    if(type==='marionette'){  this.range=150; this.damage=0;   this.coolMax=1200; }
-    this.baseRange=this.range; this.cool=0;
+    if(type==='marionette'){  this.range=150; this.damage=50;  this.coolMax=120; }
+    this.baseRange=this.range; this.cool=0; this.summonCool=0;
   }
   update(){
     if(this.type==='torch'){
@@ -583,8 +717,8 @@ class Tower{
     }
     if(this.type==='lightning'){
       if(this.cool>0){ this.cool--; return; }
-      // 사거리 내 비은신 적만 대상
-      const inRange=enemies.filter(e=>Math.hypot(e.x-this.x,e.y-this.y)<this.range&&!(e.hidden&&e.type==='ninja'));
+      // 사거리 내 모든 적 대상 (은신 무시)
+      const inRange=enemies.filter(e=>Math.hypot(e.x-this.x,e.y-this.y)<this.range);
       if(inRange.length===0) return;
       let target=inRange[0];
       for(const e of inRange){ if(e.i>target.i) target=e; }
@@ -599,17 +733,14 @@ class Tower{
       this.cool=this.coolMax; return;
     }
     if(this.type==='marionette'){
-      // 은신 감지: 사거리 내 닌자 hidden 해제
-      enemies.forEach(e=>{
-        if(Math.hypot(e.x-this.x,e.y-this.y)<this.range&&e.type==='ninja') e.hidden=false;
-      });
+      // 인형 소환 (인형술사와 동일, 20초마다 체력 400 인형)
+      if(this.summonCool>0){ this.summonCool--; }
+      else{ dolls.push(new Doll(400)); this.summonCool=1200; }
+      // 직접 공격: 사거리 내 모든 적에게 50 데미지 + 1초 스턴 (2초 쿨타임)
       if(this.cool>0){ this.cool--; return; }
-      // 사거리 내 모든 적 공격 (50 데미지) + 1초 스턴
       const hits=enemies.filter(e=>Math.hypot(e.x-this.x,e.y-this.y)<this.range);
       if(hits.length===0) return;
       hits.forEach(e=>{ e.hp-=50; e.stunTick=Math.max(e.stunTick,60); });
-      // 마리오네트 인형 소환 (체력 400)
-      dolls.push(new Doll(400));
       lightnings.push({segments:hits.map(e=>[this.x,this.y,e.x,e.y]),life:15});
       this.cool=this.coolMax; return;
     }
@@ -714,6 +845,10 @@ function update(){
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i];
     if(e.hp<=0){
+      if(e.type==='golem'&&wave===15&&e.killedByDoll&&!persistent.achievements['counter_charge']){
+        persistent.achievements['counter_charge']=true;
+        savePersistent();
+      }
       if(e.type==='golem'){
         for(let j=0;j<3;j++){
           const m=new Enemy('miniGolem');
@@ -849,6 +984,7 @@ function startGame(){
   loop();
 }
 
+renderPersistent(); renderInventoryButtons();
 updateTowerCountUI();
 loop();
 </script>
