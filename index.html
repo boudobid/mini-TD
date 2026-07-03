@@ -37,13 +37,16 @@
     <div style="margin-top:10px;color:#FFD700;font-size:15px;">💰 보유 골드: <span id="persistentGoldDisplay">0</span></div>
   <div id="codexUI" style="display:none;margin-top:15px;background:#222;padding:14px;border:1px solid #555;border-radius:6px;max-width:420px;text-align:left;">
     <h4 style="margin:0 0 10px;text-align:center;">📖 적 도감</h4>
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:red;display:inline-block;border-radius:2px;"></span><b>방랑자</b> <small style="color:#aaa;">체력 50 · 보통 속도 · 기본 적</small></div>
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:orange;display:inline-block;border-radius:2px;"></span><b>도둑</b> <small style="color:#aaa;">체력 25 · 매우 빠름</small></div>
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:blue;display:inline-block;border-radius:2px;"></span><b>기사</b> <small style="color:#aaa;">체력 200 · 느림 · 탱커</small></div>
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#8B4513;display:inline-block;border-radius:2px;"></span><b>기마병</b> <small style="color:#aaa;">체력 300 · 속도 1.5 · 승마(100 피해 시 기사로 변신)</small></div>
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:purple;display:inline-block;border-radius:2px;"></span><b>닌자</b> <small style="color:#aaa;">체력 100 · 빠름 · 은신(횃불로 감지)</small></div>
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:gray;display:inline-block;border-radius:2px;"></span><b>골렘</b> <small style="color:#aaa;">체력 500 · 매우 느림 · 죽으면 미니골렘 3마리로 분열</small></div>
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:lightgray;display:inline-block;border-radius:2px;"></span><b>미니골렘</b> <small style="color:#aaa;">체력 250 · 골렘의 조각</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:red;display:inline-block;border-radius:2px;"></span><b>방랑자</b> <small style="color:#aaa;">체력 50</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:orange;display:inline-block;border-radius:2px;"></span><b>도둑</b> <small style="color:#aaa;">체력 25</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:blue;display:inline-block;border-radius:2px;"></span><b>기사</b> <small style="color:#aaa;">체력 200</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#8B4513;display:inline-block;border-radius:2px;"></span><b>기마병</b> <small style="color:#aaa;">체력 300</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:purple;display:inline-block;border-radius:2px;"></span><b>닌자</b> <small style="color:#aaa;">체력 100</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:gray;display:inline-block;border-radius:2px;"></span><b>골렘</b> <small style="color:#aaa;">체력 500</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:lightgray;display:inline-block;border-radius:2px;"></span><b>미니골렘</b> <small style="color:#aaa;">체력 250</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#660066;display:inline-block;border-radius:2px;"></span><b>흑마술사</b> <small style="color:#aaa;">체력 800</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#aaaaff;display:inline-block;border-radius:2px;"></span><b>유령</b> <small style="color:#aaa;">체력 50</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:silver;display:inline-block;border-radius:2px;outline:1px solid gold;"></span><b>기사단장</b> <small style="color:#aaa;">체력 1200</small></div>
   </div>
   <div id="inventoryUI" style="display:none;margin-top:15px;background:#222;padding:10px;border:1px solid #555;">
     <h4>장착 타워 (최대 6)</h4>
@@ -88,7 +91,7 @@
 <canvas id="game" width="600" height="400"></canvas>
 
 <div id="ui">
-  <span>🌊 웨이브: <span id="wave">1</span>/15</span>
+  <span>🌊 웨이브: <span id="wave">1</span>/25</span>
   <span> | ⏱ <span id="time">60</span>s</span>
   <span> | 골드: <span id="gold">100</span></span>
   <span> | 체력: <span id="hp">200</span></span>
@@ -340,11 +343,8 @@ document.addEventListener('keydown',e=>{
 
 function equipTower(type){
   if(type==='wire'){
-    if(!persistent.unlocked.includes('wire')) return;
     wireEquipped=!wireEquipped; renderEquip(); renderSkillSlot(); return;
   }
-  if(type==='marionette'&&!persistent.achievements['counter_charge']) return;
-  if(!persistent.unlocked.includes(type)) return;
   if(equipped.length>=MAX_SLOTS||equipped.includes(type)) return;
   equipped.push(type);
   renderEquip(); renderSlotBar();
@@ -367,15 +367,23 @@ function renderEquip(){
   });
 }
 
+const PANEL_IDS=['inventoryUI','codexUI','shopUI','achievementsUI'];
+function closeAllPanels(except){
+  PANEL_IDS.forEach(id=>{ if(id!==except) document.getElementById(id).style.display='none'; });
+}
 function toggleInventory(){
   const ui=document.getElementById('inventoryUI');
-  ui.style.display=ui.style.display==='none'?'block':'none';
-  if(ui.style.display==='block') renderInventoryButtons();
+  const willOpen=ui.style.display!=='block';
+  closeAllPanels(willOpen?'inventoryUI':null);
+  ui.style.display=willOpen?'block':'none';
+  if(willOpen) renderInventoryButtons();
 }
 
 function toggleCodex(){
   const el=document.getElementById('codexUI');
-  el.style.display=el.style.display==='none'?'block':'none';
+  const willOpen=el.style.display!=='block';
+  closeAllPanels(willOpen?'codexUI':null);
+  el.style.display=willOpen?'block':'none';
 }
 
 function toggleWireInfo(){
@@ -385,14 +393,18 @@ function toggleWireInfo(){
 
 function toggleShop(){
   const el=document.getElementById('shopUI');
-  el.style.display=el.style.display==='none'?'block':'none';
-  if(el.style.display==='block') renderShop();
+  const willOpen=el.style.display!=='block';
+  closeAllPanels(willOpen?'shopUI':null);
+  el.style.display=willOpen?'block':'none';
+  if(willOpen) renderShop();
 }
 
 function toggleAchievements(){
   const el=document.getElementById('achievementsUI');
-  el.style.display=el.style.display==='none'?'block':'none';
-  if(el.style.display==='block') renderAchievements();
+  const willOpen=el.style.display!=='block';
+  closeAllPanels(willOpen?'achievementsUI':null);
+  el.style.display=willOpen?'block':'none';
+  if(willOpen) renderAchievements();
 }
 
 function renderPersistent(){
@@ -463,8 +475,7 @@ function renderInventoryButtons(){
   types.forEach(t=>{
     const btn=document.getElementById('inv_'+t);
     if(!btn) return;
-    let unlocked=persistent.unlocked.includes(t);
-    if(t==='marionette') unlocked=!!persistent.achievements['counter_charge'];
+    let unlocked=true; // 테스트: 모든 타워 개방
     btn.disabled=!unlocked;
     btn.style.opacity=unlocked?'1':'0.4';
   });
@@ -563,8 +574,11 @@ class Enemy{
     if(type==='knight'){   this.hp=200; this.maxHp=200; this.baseSpeed=0.6; this.color='blue'; }
     if(type==='cavalry'){  this.hp=300; this.maxHp=300; this.baseSpeed=1.5; this.color='#8B4513'; }
     if(type==='ninja'){    this.hp=100; this.maxHp=100; this.baseSpeed=2.3; this.color='purple'; this.hidden=true; }
-    if(type==='golem'){    this.hp=500; this.maxHp=500; this.baseSpeed=0.4; this.color='gray';   this.isBoss=(wave===10); }
+    if(type==='golem'){    this.hp=500; this.maxHp=500; this.baseSpeed=0.4; this.color='gray';   this.isBoss=(wave===10||wave===25); }
     if(type==='miniGolem'){this.hp=250; this.maxHp=250; this.baseSpeed=1;   this.color='lightgray'; }
+    if(type==='darkMage'){ this.hp=800; this.maxHp=800; this.baseSpeed=0.5; this.color='#660066'; this.isBoss=(wave===20); this.summonTick=0; this.phase2=false; }
+    if(type==='ghost'){    this.hp=50;  this.maxHp=50;  this.baseSpeed=1.2; this.color='#aaaaff'; this.hidden=true; }
+    if(type==='knightLord'){ this.hp=1200; this.maxHp=1200; this.baseSpeed=0.6; this.color='silver'; this.isBoss=(wave===25); this.summonCavalryTick=0; this.summonKnightTick=0; this.ragePhase=false; }
     this.speed=this.baseSpeed;
   }
   update(){
@@ -572,6 +586,43 @@ class Enemy{
     if(this.type==='cavalry' && this.hp<=200){
       this.type='knight'; this.maxHp=200; this.hp=Math.min(this.hp,200);
       this.baseSpeed=0.6; this.speed=0.6; this.color='blue';
+    }
+    // 흑마술사: 체력 절반 시 은신(은신 특성 적용)
+    if(this.type==='darkMage' && !this.phase2 && this.hp<=this.maxHp/2){
+      this.phase2=true; this.hidden=true;
+    }
+    // 흑마술사: 10초(600틱)마다 유령 4마리 소환
+    if(this.type==='darkMage' && !this.stunTick){
+      this.summonTick++;
+      if(this.summonTick>=600){
+        this.summonTick=0;
+        for(let g=0;g<4;g++){
+          const ghost=new Enemy('ghost');
+          ghost.x=this.x; ghost.y=this.y; ghost.i=this.i;
+          enemies.push(ghost);
+        }
+      }
+    }
+    // 기사단장: 10초(600틱)마다 기마병 2마리, 5초(300틱)마다 기사 4마리 소환
+    if(this.type==='knightLord' && !this.stunTick){
+      this.summonCavalryTick++;
+      this.summonKnightTick++;
+      if(this.summonCavalryTick>=600){
+        this.summonCavalryTick=0;
+        for(let c=0;c<2;c++){
+          const cav=new Enemy('cavalry');
+          cav.x=this.x; cav.y=this.y; cav.i=this.i;
+          enemies.push(cav);
+        }
+      }
+      if(this.summonKnightTick>=300){
+        this.summonKnightTick=0;
+        for(let k=0;k<4;k++){
+          const kn=new Enemy('knight');
+          kn.x=this.x; kn.y=this.y; kn.i=this.i;
+          enemies.push(kn);
+        }
+      }
     }
     // 슬로우
     if(this.slowTick>0){
@@ -627,6 +678,9 @@ function getEnemyInfo(e){
   if(e.type==='ninja')     return '은신';
   if(e.type==='golem')     return '보스/분열';
   if(e.type==='miniGolem') return '조각';
+  if(e.type==='darkMage')  return '흑마술사';
+  if(e.type==='ghost')     return '은신';
+  if(e.type==='knightLord') return '보스/소환';
   return '';
 }
 
@@ -649,6 +703,16 @@ function buildWaveQueue(){
   else if(w===13){ for(let i=0;i<15;i++) waveQueue.push('knight'); for(let i=0;i<4;i++) waveQueue.push('cavalry'); for(let i=0;i<2;i++) waveQueue.push('golem'); }
   else if(w===14){ for(let i=0;i<20;i++) waveQueue.push('ninja'); for(let i=0;i<2;i++) waveQueue.push('golem'); }
   else if(w===15){ for(let i=0;i<10;i++) waveQueue.push('knight'); for(let i=0;i<6;i++) waveQueue.push('cavalry'); for(let i=0;i<15;i++) waveQueue.push('ninja'); for(let i=0;i<3;i++) waveQueue.push('golem'); }
+  else if(w===16){ for(let i=0;i<20;i++) waveQueue.push('knight'); for(let i=0;i<10;i++) waveQueue.push('cavalry'); }
+  else if(w===17){ for(let i=0;i<25;i++) waveQueue.push('ninja'); for(let i=0;i<10;i++) waveQueue.push('thief'); }
+  else if(w===18){ for(let i=0;i<15;i++) waveQueue.push('cavalry'); for(let i=0;i<5;i++) waveQueue.push('golem'); }
+  else if(w===19){ for(let i=0;i<20;i++) waveQueue.push('knight'); for(let i=0;i<20;i++) waveQueue.push('ninja'); for(let i=0;i<10;i++) waveQueue.push('cavalry'); }
+  else if(w===20){ waveQueue.push('darkMage'); for(let i=0;i<15;i++) waveQueue.push('cavalry'); for(let i=0;i<20;i++) waveQueue.push('ninja'); }
+  else if(w===21){ for(let i=0;i<25;i++) waveQueue.push('knight'); for(let i=0;i<25;i++) waveQueue.push('cavalry'); }
+  else if(w===22){ for(let i=0;i<30;i++) waveQueue.push('ninja'); for(let i=0;i<15;i++) waveQueue.push('knight'); for(let i=0;i<5;i++) waveQueue.push('golem'); }
+  else if(w===23){ for(let i=0;i<20;i++) waveQueue.push('cavalry'); for(let i=0;i<20;i++) waveQueue.push('ninja'); for(let i=0;i<10;i++) waveQueue.push('golem'); }
+  else if(w===24){ for(let i=0;i<30;i++) waveQueue.push('knight'); for(let i=0;i<20;i++) waveQueue.push('cavalry'); for(let i=0;i<30;i++) waveQueue.push('ninja'); }
+  else if(w===25){ waveQueue.push('knightLord'); for(let i=0;i<15;i++) waveQueue.push('knight'); for(let i=0;i<10;i++) waveQueue.push('cavalry'); for(let i=0;i<20;i++) waveQueue.push('ninja'); }
   spawnLimit=waveQueue.length;
 }
 
@@ -679,11 +743,11 @@ function readyWave(){
 }
 
 function nextWave(){
-  if(wave>=15){
+  if(wave>=25){
     if(spawnCount>=spawnLimit&&enemies.length===0) showOverlay('clear');
     return;
   }
-  wave++; timeLeft=(wave===10)?120:60;
+  wave++; timeLeft=(wave===10||wave===20||wave===25)?120:60;
   spawnCount=0; spawnTick=0; timeTick=0;
   buildWaveQueue(); waveStarted=true;
 }
@@ -845,7 +909,7 @@ function update(){
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i];
     if(e.hp<=0){
-      if(e.type==='golem'&&wave===15&&e.killedByDoll&&!persistent.achievements['counter_charge']){
+      if(e.type==='knightLord'&&e.killedByDoll&&!persistent.achievements['counter_charge']){
         persistent.achievements['counter_charge']=true;
         savePersistent();
       }
@@ -862,6 +926,9 @@ function update(){
       else if(e.type==='ninja')     gold+=15;
       else if(e.type==='golem')     gold+=35;
       else if(e.type==='miniGolem') gold+=20;
+      else if(e.type==='darkMage')  gold+=50;
+      else if(e.type==='ghost')     gold+=5;
+      else if(e.type==='knightLord') gold+=100;
       enemies.splice(i,1);
     }
   }
