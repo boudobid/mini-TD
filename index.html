@@ -21,6 +21,16 @@
     z-index:30; flex-direction:column;
     align-items:center; justify-content:center; text-align:center;
   }
+  .noscroll{ scrollbar-width:none; -ms-overflow-style:none; }
+  .noscroll::-webkit-scrollbar{ display:none; }
+  #achToast{
+    display:none; position:fixed; top:18px; left:50%; transform:translateX(-50%);
+    z-index:60; background:linear-gradient(135deg,#3a2a00,#1a1500);
+    border:2px solid #FFD700; border-radius:8px; padding:12px 22px;
+    color:#FFD700; text-align:center; font-family:sans-serif;
+    box-shadow:0 0 24px rgba(255,215,0,0.5); max-width:90vw;
+  }
+  @keyframes achToastIn{ from{opacity:0;transform:translateX(-50%) translateY(-12px);} to{opacity:1;transform:translateX(-50%) translateY(0);} }
 </style>
 </head>
 <body>
@@ -47,18 +57,21 @@
     <div style="margin-top:10px;color:#FFD700;font-size:15px;"><span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:radial-gradient(#ffe066,#daa520);border:1px solid #b8860b;vertical-align:-1px;"></span> 보유 코인: <span id="persistentGoldDisplay">0</span></div>
   <div id="codexUI" style="display:none;margin-top:15px;background:#222;padding:14px;border:1px solid #555;border-radius:6px;max-width:420px;text-align:left;">
     <h4 style="margin:0 0 10px;text-align:center;">📖 적 도감</h4>
+    <div class="noscroll" style="max-height:260px;overflow-y:auto;padding-right:4px;">
     <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:red;display:inline-block;border-radius:2px;"></span><b>방랑자</b> <small style="color:#aaa;">체력 50</small></div>
     <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:orange;display:inline-block;border-radius:2px;"></span><b>도둑</b> <small style="color:#aaa;">체력 25</small></div>
     <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:blue;display:inline-block;border-radius:2px;"></span><b>기사</b> <small style="color:#aaa;">체력 200</small></div>
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#8B4513;display:inline-block;border-radius:2px;"></span><b>기마병</b> <small style="color:#aaa;">체력 300</small></div>
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:purple;display:inline-block;border-radius:2px;"></span><b>닌자</b> <small style="color:#aaa;">체력 100</small></div>
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:gray;display:inline-block;border-radius:2px;"></span><b>골렘</b> <small style="color:#aaa;">체력 500</small></div>
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:lightgray;display:inline-block;border-radius:2px;"></span><b>미니골렘</b> <small style="color:#aaa;">체력 250</small></div>
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#660066;display:inline-block;border-radius:2px;"></span><b>흑마술사</b> <small style="color:#aaa;">체력 800</small></div>
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#aaaaff;display:inline-block;border-radius:2px;"></span><b>유령</b> <small style="color:#aaa;">체력 50</small></div>
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:silver;display:inline-block;border-radius:2px;outline:1px solid gold;"></span><b>기사단장</b> <small style="color:#aaa;">체력 1200</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#8B4513;display:inline-block;border-radius:2px;"></span><b>기마병</b> <small style="color:#aaa;">체력 300 · 특성: 승마(피해 시 기사 변신)</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:purple;display:inline-block;border-radius:2px;"></span><b>닌자</b> <small style="color:#aaa;">체력 100 · 특성: 은신</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:gray;display:inline-block;border-radius:2px;"></span><b>골렘</b> <small style="color:#aaa;">체력 500 · 특성: 보스/분열</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:lightgray;display:inline-block;border-radius:2px;"></span><b>미니골렘</b> <small style="color:#aaa;">체력 250 · 특성: 조각(골렘 분열)</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#660066;display:inline-block;border-radius:2px;"></span><b>흑마술사</b> <small style="color:#aaa;">체력 800 · 특성: 보스/소환(유령)·반 이하 은신</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#aaaaff;display:inline-block;border-radius:2px;"></span><b>유령</b> <small style="color:#aaa;">체력 50 · 특성: 은신</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:silver;display:inline-block;border-radius:2px;outline:1px solid gold;"></span><b>기사단장</b> <small style="color:#aaa;">체력 1200 · 특성: 보스/소환(기마병·기사)</small></div>
+    </div>
   </div>
   <div id="inventoryUI" style="display:none;margin-top:15px;background:#222;padding:10px;border:1px solid #555;">
+    <div class="noscroll" style="max-height:260px;overflow-y:auto;padding-right:4px;">
     <h4>장착 타워 (최대 6)</h4>
     <div id="equipList"></div>
     <hr>
@@ -77,16 +90,20 @@
      <button id="inv_wire" onclick="equipTower('wire')"><span style="color:#aaff44;">✦</span> 가시 와이어 <small style="color:#aaa" id="wireEquipHint">(미장착 · R키)</small></button>
      <h4>🔒 엘리트</h4>
      <button id="inv_marionette" onclick="equipTower('marionette')">🎪 마리오네트 <small style="color:#aaa;">(역돌격 업적 필요)</small></button>
+    </div>
      </div>
      <div id="shopUI" style="display:none;margin-top:15px;background:#222;padding:14px;border:1px solid #555;border-radius:6px;max-width:420px;text-align:left;">
      <h4 style="margin:0 0 8px;text-align:center;">🛒 상점</h4>
      <div style="text-align:center;margin-bottom:8px;"><span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:radial-gradient(#ffe066,#daa520);border:1px solid #b8860b;vertical-align:-1px;"></span> 보유 코인: <span id="shopGold" style="color:#FFD700;">0</span></div>
+     <div class="noscroll" style="max-height:260px;overflow-y:auto;padding-right:4px;">
      <div id="shopList"></div>
+     </div>
      <small style="color:#888;display:block;margin-top:6px;text-align:center;">게임 클리어/진행 시 코인을 획득합니다.</small>
      </div>
      <div id="achievementsUI" style="display:none;margin-top:15px;background:#222;padding:14px;border:1px solid #555;border-radius:6px;max-width:420px;text-align:left;">
      <h4 style="margin:0 0 8px;text-align:center;">🏆 업적</h4>
-     <div id="achievementsList"></div>
+     <div id="achCatTabs" style="display:flex;gap:6px;justify-content:center;margin-bottom:8px;"></div>
+     <div id="achievementsList" class="noscroll" style="max-height:260px;overflow-y:auto;padding-right:4px;"></div>
      </div>
      </div>
 
@@ -105,10 +122,27 @@
   <button id="popupSell" style="cursor:pointer;padding:5px 10px;font-size:13px;background:#4a2a2a;color:#fff;border:1px solid #a55;border-radius:4px;">💰 판매 (20%)</button>
 </div>
 
+<div id="tutorialPrompt" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:40;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+  <div style="max-width:380px;background:#222;border:1px solid #FFD700;border-radius:8px;padding:24px;">
+    <h2 style="margin:0 0 12px;color:#FFD700;">🎓 튜토리얼</h2>
+    <p style="color:#ddd;margin:0 0 20px;">처음 오셨군요! 튜토리얼을 진행하시겠습니까?<br><small style="color:#FFD700;">수락 시 +100 코인</small></p>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <button onclick="acceptTutorial()" style="padding:10px 20px;background:#2a4a2a;color:#fff;border:1px solid #5a5;border-radius:6px;cursor:pointer;">수락</button>
+      <button onclick="rejectTutorial()" style="padding:10px 20px;background:#4a2a2a;color:#fff;border:1px solid #a55;border-radius:6px;cursor:pointer;">거절</button>
+    </div>
+  </div>
+</div>
+<div id="tutorialGuide" style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:35;max-width:420px;background:rgba(20,20,20,0.97);border:1px solid #FFD700;border-radius:8px;padding:16px;text-align:left;">
+  <div id="tutorialTitle" style="color:#FFD700;font-size:16px;font-weight:bold;margin-bottom:8px;"></div>
+  <div id="tutorialBody" style="color:#ddd;font-size:13px;line-height:1.6;white-space:pre-line;"></div>
+  <div style="text-align:right;margin-top:12px;">
+    <button id="tutorialNextBtn" onclick="nextTutorialStep()" style="padding:6px 16px;background:#333;color:#fff;border:1px solid #888;border-radius:4px;cursor:pointer;">다음</button>
+  </div>
+</div>
 <canvas id="game" width="600" height="400"></canvas>
 
 <div id="ui">
-  <span>🌊 웨이브: <span id="wave">1</span>/25</span>
+  <span>🌊 웨이브: <span id="wave">1</span>/<span id="waveTotal">25</span></span>
   <span> | ⏱ <span id="time">60</span>s</span>
   <span> | 골드: <span id="gold">100</span></span>
   <span> | 체력: <span id="hp">200</span></span>
@@ -136,12 +170,15 @@
   <div id="bossHp" style="height:100%;width:100%;background:red;"></div>
 </div>
 
+<div id="achToast"></div>
+
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
 let gold=100, hp=200, wave=1, timeLeft=60;
 let placingType=null, gameStarted=false, selectedTower=null;
+let isTutorial=false, tutorialStep=0;
 let gameDifficulty='easy';
 let waveStarted=false, preparing=false;
 let spawnCount=0, spawnLimit=8;
@@ -157,6 +194,7 @@ let wireEquipped = false; // 가시 와이어 장착 여부
 const equipped=[], towers=[], enemies=[], dolls=[], wires=[], lightnings=[];
 const PATH_BLOCK_RADIUS=15, TOWER_BLOCK_RADIUS=20, MAX_SLOTS=6;
 let selectedSlot=-1;
+let achCat='all'; // 업적 카테고리 필터: 'all' | '일반' | '챌린지'
 
 const TOWER_META={
   fighter:   {label:'🗡', name:'파이터',   cost:80},
@@ -170,7 +208,7 @@ const TOWER_META={
 // 영구 저장 (상점 재화, 해금, 업적)
 function loadPersistent(){
   return {
-    gold: parseInt(localStorage.getItem('mtd_gold')||'300'),
+    gold: parseInt(localStorage.getItem('mtd_gold')||'0'),
     unlocked: JSON.parse(localStorage.getItem('mtd_unlocked')||'["fighter","archer"]'),
     achievements: JSON.parse(localStorage.getItem('mtd_achievements')||'{}')
   };
@@ -181,23 +219,57 @@ function savePersistent(){
   localStorage.setItem('mtd_achievements',JSON.stringify(persistent.achievements));
 }
 let persistent=loadPersistent();
+// 1회성 전체 초기화 (코인/업적/상점 해금)
+if(!localStorage.getItem('mtd_full_reset_v2')){
+  localStorage.setItem('mtd_full_reset_v2','1');
+  localStorage.removeItem('mtd_tutorial_done');
+  persistent.gold=0;
+  persistent.unlocked=['fighter','archer'];
+  persistent.achievements={};
+  savePersistent();
+}
+
+function showAchToast(a){
+  const t=document.getElementById('achToast');
+  if(!t||!a) return;
+  t.innerHTML='🏆 업적 달성<br><b>'+a.name+'</b><br><small style="color:#ddd;">'+a.desc+'</small>';
+  t.style.display='block';
+  t.style.animation='none'; void t.offsetWidth;
+  t.style.animation='achToastIn 0.3s ease';
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>{ t.style.display='none'; },3000);
+}
+
+function unlockAchievement(key){
+  if(persistent.achievements[key]) return false;
+  persistent.achievements[key]=true;
+  savePersistent();
+  showAchToast(ACHIEVEMENTS[key]);
+  return true;
+}
 
 const SHOP_PRICES={ puppeteer:500, lightning:550, wire:200 };
 const ACHIEVEMENTS={
-  counter_charge:{ name:'역돌격', desc:'최종 보스를 인형의 박치기 피해로 처치' },
-  first_lose:{ name:'첫 상처', desc:'첫 패배 경험 (+50 코인)' },
-  first_win:{ name:'첫 승리', desc:'첫 게임 클리어 (+50 코인)' }
+  first_lose:{ name:'첫 상처', desc:'첫 패배 경험 (+50 코인)', cat:'일반' },
+  first_win:{ name:'첫 승리', desc:'첫 게임 클리어 (+50 코인)', cat:'일반' },
+  counter_charge:{ name:'역돌격', desc:'최종 보스를 인형의 박치기 피해로 처치', cat:'챌린지' }
 };
 
-const path=[
-  {x:50,y:200},{x:200,y:200},{x:200,y:100},
-  {x:400,y:100},{x:400,y:300},{x:550,y:200}
+const TUTORIAL_STEPS=[
+  {title:'🎓 환영합니다!', body:'튜토리얼을 시작합니다. 이곳은 연습 맵이니 편하게 진행하세요.'},
+  {title:'🗺️ 지상 vs 언덕', body:'타워는 설치 위치가 다릅니다.\n🗡 파이터 → 지상 설치 (길 주변 평지)\n🏹 궁수 → 언덕 설치 (노란색 원 영역)\n캔버스의 노란 원이 언덕입니다.'},
+  {title:'🕹️ 타워 설치', body:'하단 슬롯에서 파이터(1번)·궁수(2번)를 선택해 설치해보세요.\n골드는 10,000이니 마음껏 시도 가능합니다.'},
+  {title:'⬆️ 강화 기능', body:'설치된 타워를 클릭하면 정보창이 뜹니다.\n파이터는 100골드로 강화 → 은신 적(닌자/유령) 감지!\n강화된 파이터는 금색 테두리로 표시됩니다.'},
+  {title:'👹 적의 특성', body:'이번 튜토리얼 적:\n• 방랑자 - 기본 적\n• 닌자 - 은신 (파이터 강화 전엔 공격 불가)\n• 골렘 - 처치 시 미니골렘 3마리로 분열'},
+  {title:'🛡️ 기지 체력', body:'적이 길 끝(초록 기지)에 도달하면 기지 체력이 깎입니다.\n체력이 0이 되면 게임 오버!\n단, 튜토리얼에서는 체력이 1 이하로 떨어지지 않으니 안심하세요.'},
+  {title:'🚀 시작!', body:'제한시간이 없으니 천천히 진행하세요.\n3웨이브를 막아내면 튜토리얼 완료!\n아래 준비 버튼을 눌러 시작하세요.'}
 ];
-const base=path[path.length-1];
 
-const hillZones=[
-  {x:150,y:160,r:25},{x:300,y:180,r:25},{x:440,y:220,r:25}
-];
+const DEFAULT_PATH=[{x:50,y:200},{x:200,y:200},{x:200,y:100},{x:400,y:100},{x:400,y:300},{x:550,y:200}];
+const DEFAULT_HILLS=[{x:150,y:160,r:25},{x:300,y:180,r:25},{x:440,y:220,r:25}];
+let path=DEFAULT_PATH.slice();
+let base=path[path.length-1];
+let hillZones=DEFAULT_HILLS.slice();
 
 let mouseX=0, mouseY=0;
 canvas.addEventListener('mousemove',e=>{
@@ -248,8 +320,7 @@ function showOverlay(type){
     msg.textContent='💀 게임 오버';
     const reward=wave*8;
     let bonus='';
-    if(!persistent.achievements['first_lose']){
-      persistent.achievements['first_lose']=true;
+    if(unlockAchievement('first_lose')){
       persistent.gold+=50; bonus=' 🏅업적 달성: 첫 상처 (+50 코인)';
     }
     sub.textContent='웨이브 '+wave+'에서 기지가 함락되었습니다. +'+reward+' 코인 획득.'+bonus;
@@ -259,8 +330,7 @@ function showOverlay(type){
     msg.style.color='#FFD700';
     msg.textContent='🏆 게임 클리어!';
     let bonus='';
-    if(!persistent.achievements['first_win']){
-      persistent.achievements['first_win']=true;
+    if(unlockAchievement('first_win')){
       persistent.gold+=50; bonus=' 🏅업적 달성: 첫 승리 (+50 코인)';
     }
     sub.textContent='모든 웨이브를 막아냈습니다! +300 코인 획득!'+bonus;
@@ -279,6 +349,10 @@ function resetGame(){
   waveStarted=false; preparing=false; spawnCount=0;
   placingType=null; selectedSlot=-1; selectedTower=null;
   spawnTick=0; timeTick=0; wireCoolTick=0; wireEquipped=false;
+  isTutorial=false; tutorialStep=0;
+  document.getElementById('tutorialGuide').style.display='none';
+  document.getElementById('tutorialPrompt').style.display='none';
+  restoreDefaultMap();
   hideTowerPopup();
   buildWaveQueue();
   renderSlotBar(); renderSkillSlot(); renderEquip();
@@ -287,6 +361,78 @@ function resetGame(){
   const btn=document.getElementById('readyBtn');
   btn.disabled=false; btn.style.display='inline-block';
   document.getElementById('readyTimer').textContent='';
+}
+
+function restoreDefaultMap(){
+  path=DEFAULT_PATH.slice();
+  base=path[path.length-1];
+  hillZones=DEFAULT_HILLS.slice();
+}
+function showTutorialPrompt(){
+  document.getElementById('tutorialPrompt').style.display='flex';
+}
+function acceptTutorial(){
+  document.getElementById('tutorialPrompt').style.display='none';
+  localStorage.setItem('mtd_tutorial_done','1');
+  startTutorial();
+}
+function rejectTutorial(){
+  document.getElementById('tutorialPrompt').style.display='none';
+  localStorage.setItem('mtd_tutorial_done','1');
+  showDifficulty();
+}
+function showTutorialStep(){
+  const s=TUTORIAL_STEPS[tutorialStep];
+  if(!s){ document.getElementById('tutorialGuide').style.display='none'; return; }
+  document.getElementById('tutorialGuide').style.display='block';
+  document.getElementById('tutorialTitle').textContent=s.title;
+  document.getElementById('tutorialBody').textContent=s.body;
+  document.getElementById('tutorialNextBtn').textContent = tutorialStep>=TUTORIAL_STEPS.length-1 ? '시작' : '다음';
+}
+function nextTutorialStep(){
+  tutorialStep++;
+  if(tutorialStep>=TUTORIAL_STEPS.length){
+    document.getElementById('tutorialGuide').style.display='none';
+    document.getElementById('readyBtn').disabled=false;
+    return;
+  }
+  showTutorialStep();
+}
+function startTutorial(){
+  isTutorial=true; tutorialStep=0;
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('tutorialGuide').style.display='none';
+  path=[{x:50,y:200},{x:550,y:200}];
+  base=path[path.length-1];
+  hillZones=[{x:300,y:150,r:30}];
+  gold=10000; hp=200; wave=1; timeLeft=9999;
+  equipped.length=0; equipped.push('fighter','archer');
+  towers.length=0; enemies.length=0; dolls.length=0; wires.length=0; lightnings.length=0;
+  gameStarted=true; gameOver=false; waveStarted=false;
+  spawnCount=0; spawnTick=0; timeTick=0;
+  placingType=null; selectedSlot=-1; selectedTower=null;
+  wireCoolTick=0; wireEquipped=false;
+  buildWaveQueue();
+  document.getElementById('readyBtn').disabled=true;
+  document.getElementById('readyBtn').style.display='inline-block';
+  document.getElementById('readyTimer').textContent='';
+  renderSlotBar(); renderSkillSlot();
+  showTutorialStep();
+  setSpeed(1);
+  loop();
+}
+function finishTutorial(){
+  isTutorial=false;
+  persistent.gold+=100; savePersistent(); renderPersistent();
+  gameOver=true; gameStarted=false;
+  const overlay=document.getElementById('gameOverlay');
+  const msg=document.getElementById('overlayMsg');
+  const sub=document.getElementById('overlaySubMsg');
+  overlay.style.background='rgba(40,35,0,0.90)';
+  msg.style.color='#FFD700';
+  msg.textContent='🎓 튜토리얼 완료!';
+  sub.textContent='모든 웨이브를 막아냈습니다! +100 코인 획득!';
+  overlay.style.display='flex';
 }
 
 function renderSlotBar(){
@@ -399,22 +545,21 @@ function renderEquip(){
 }
 
 const PANEL_IDS=['inventoryUI','codexUI','shopUI','achievementsUI'];
+function openPanel(id){ document.getElementById(id).style.display='block'; }
+function closePanel(id){ document.getElementById(id).style.display='none'; }
 function closeAllPanels(except){
-  PANEL_IDS.forEach(id=>{ if(id!==except) document.getElementById(id).style.display='none'; });
+  PANEL_IDS.forEach(id=>{ if(id!==except) closePanel(id); });
 }
 function toggleInventory(){
-  const ui=document.getElementById('inventoryUI');
-  const willOpen=ui.style.display!=='block';
-  closeAllPanels(willOpen?'inventoryUI':null);
-  ui.style.display=willOpen?'block':'none';
-  if(willOpen) renderInventoryButtons();
+  const isOpen=document.getElementById('inventoryUI').style.display==='block';
+  closeAllPanels(isOpen?null:'inventoryUI');
+  if(!isOpen){ openPanel('inventoryUI'); renderInventoryButtons(); }
 }
 
 function toggleCodex(){
-  const el=document.getElementById('codexUI');
-  const willOpen=el.style.display!=='block';
-  closeAllPanels(willOpen?'codexUI':null);
-  el.style.display=willOpen?'block':'none';
+  const isOpen=document.getElementById('codexUI').style.display==='block';
+  closeAllPanels(isOpen?null:'codexUI');
+  if(!isOpen) openPanel('codexUI');
 }
 
 function toggleWireInfo(){
@@ -423,19 +568,15 @@ function toggleWireInfo(){
 }
 
 function toggleShop(){
-  const el=document.getElementById('shopUI');
-  const willOpen=el.style.display!=='block';
-  closeAllPanels(willOpen?'shopUI':null);
-  el.style.display=willOpen?'block':'none';
-  if(willOpen) renderShop();
+  const isOpen=document.getElementById('shopUI').style.display==='block';
+  closeAllPanels(isOpen?null:'shopUI');
+  if(!isOpen){ openPanel('shopUI'); renderShop(); }
 }
 
 function toggleAchievements(){
-  const el=document.getElementById('achievementsUI');
-  const willOpen=el.style.display!=='block';
-  closeAllPanels(willOpen?'achievementsUI':null);
-  el.style.display=willOpen?'block':'none';
-  if(willOpen) renderAchievements();
+  const isOpen=document.getElementById('achievementsUI').style.display==='block';
+  closeAllPanels(isOpen?null:'achievementsUI');
+  if(!isOpen){ openPanel('achievementsUI'); renderAchievements(); }
 }
 
 function renderPersistent(){
@@ -491,12 +632,35 @@ function renderAchievements(){
   const el=document.getElementById('achievementsList');
   if(!el) return;
   el.innerHTML='';
-  Object.keys(ACHIEVEMENTS).forEach(key=>{
+  el.scrollTop=0;
+  // 카테고리 탭 렌더
+  const tabs=document.getElementById('achCatTabs');
+  if(tabs){
+    tabs.innerHTML='';
+    const opts=[['all','전체'],['일반','🌟 일반'],['챌린지','🔥 챌린지']];
+    opts.forEach(([key,label])=>{
+      const b=document.createElement('button');
+      const active=achCat===key;
+      b.textContent=label;
+      b.style.cssText='padding:5px 12px;font-size:13px;cursor:pointer;border-radius:4px;border:1px solid '+(active?'#FFD700':'#555')+';background:'+(active?'#332b00':'#1a1a1a')+';color:'+(active?'#FFD700':'#ccc')+';';
+      b.onclick=()=>{ achCat=key; renderAchievements(); };
+      tabs.appendChild(b);
+    });
+  }
+  // 필터링된 업적만 표시
+  const keys=Object.keys(ACHIEVEMENTS).filter(k=>achCat==='all'||ACHIEVEMENTS[k].cat===achCat);
+  if(keys.length===0){
+    const empty=document.createElement('div');
+    empty.style.cssText='padding:10px;text-align:center;color:#888;font-size:13px;';
+    empty.textContent='해당 카테고리에 업적이 없습니다.';
+    el.appendChild(empty);
+  }
+  keys.forEach(key=>{
     const a=ACHIEVEMENTS[key];
     const earned=persistent.achievements[key];
     const div=document.createElement('div');
     div.style.cssText='padding:8px;border:1px solid '+(earned?'#FFD700':'#555')+';margin:4px 0;border-radius:4px;background:'+(earned?'#332b00':'#1a1a1a')+';';
-    div.innerHTML=(earned?'🏆':'🔒')+' <b>'+a.name+'</b><br><small style="color:#aaa;">'+a.desc+'</small>';
+    div.innerHTML=(earned?'🏆':'🔒')+' <b>'+a.name+'</b> <small style="color:#888;">['+a.cat+']</small><br><small style="color:#aaa;">'+a.desc+'</small>';
     el.appendChild(div);
   });
 }
@@ -506,7 +670,8 @@ function renderInventoryButtons(){
   types.forEach(t=>{
     const btn=document.getElementById('inv_'+t);
     if(!btn) return;
-    let unlocked=true; // 테스트: 모든 타워 개방
+    const unlocked = persistent.unlocked.includes(t) ||
+      (t==='marionette' && !!persistent.achievements['counter_charge']);
     btn.disabled=!unlocked;
     btn.style.opacity=unlocked?'1':'0.4';
   });
@@ -675,7 +840,7 @@ class Enemy{
     const dist=Math.hypot(dx,dy);
     if(dist<2){
       this.i++;
-      if(this.i>=path.length){ hp-=this.hp; this.hp=0; }
+      if(this.i>=path.length){ if(!isTutorial) hp-=this.hp; this.hp=0; }
     }else{
       this.x+=dx/dist*this.speed; this.y+=dy/dist*this.speed;
     }
@@ -718,6 +883,13 @@ function getEnemyInfo(e){
 let waveQueue=[];
 function buildWaveQueue(){
   waveQueue=[];
+  if(isTutorial){
+    if(wave===1) for(let i=0;i<5;i++) waveQueue.push('wanderer');
+    else if(wave===2) for(let i=0;i<5;i++) waveQueue.push('ninja');
+    else if(wave===3) waveQueue.push('golem');
+    spawnLimit=waveQueue.length;
+    return;
+  }
   const w=wave;
   if(w===1)  for(let i=0;i<8;i++)  waveQueue.push('wanderer');
   else if(w===2)  for(let i=0;i<12;i++) waveQueue.push('wanderer');
@@ -774,6 +946,15 @@ function readyWave(){
 }
 
 function nextWave(){
+  if(isTutorial){
+    if(wave>=3){
+      if(spawnCount>=spawnLimit&&enemies.length===0) finishTutorial();
+      return;
+    }
+    wave++; spawnCount=0; spawnTick=0; timeTick=0;
+    buildWaveQueue(); waveStarted=true;
+    return;
+  }
   if(wave>=25){
     if(spawnCount>=spawnLimit&&enemies.length===0) showOverlay('clear');
     return;
@@ -1020,9 +1201,8 @@ function update(){
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i];
     if(e.hp<=0){
-      if(e.type==='knightLord'&&e.killedByDoll&&!persistent.achievements['counter_charge']){
-        persistent.achievements['counter_charge']=true;
-        savePersistent();
+      if(e.type==='knightLord'&&e.killedByDoll){
+        unlockAchievement('counter_charge');
       }
       if(e.type==='golem'){
         for(let j=0;j<3;j++){
@@ -1152,7 +1332,7 @@ function loop(now){
           }
         }
         update();
-        if(hp<=0){ showOverlay('lose'); return; }
+        if(hp<=0){ if(isTutorial){ resetGame(); return; } showOverlay('lose'); return; }
       }
     }
   }
@@ -1164,7 +1344,8 @@ function loop(now){
   goldEl.textContent=gold;
   hpEl.textContent=hp;
   waveEl.textContent=wave;
-  timeEl.textContent=timeLeft;
+  document.getElementById('waveTotal').textContent=isTutorial?'3':'25';
+  timeEl.textContent=isTutorial?'∞':timeLeft;
   const boss=enemies.find(e=>e.isBoss);
   document.getElementById('bossBar').style.display=boss?'block':'none';
   if(boss) document.getElementById('bossHp').style.width=(boss.hp/boss.maxHp*100)+'%';
@@ -1173,6 +1354,10 @@ function loop(now){
 
 function showDifficulty(){
   closeAllPanels(null);
+  if(!localStorage.getItem('mtd_tutorial_done')){
+    showTutorialPrompt();
+    return;
+  }
   document.getElementById('difficultyUI').style.display='block';
 }
 function hideDifficulty(){
@@ -1182,6 +1367,8 @@ function hideDifficulty(){
 function startGame(diff){
   document.getElementById('startScreen').style.display='none';
   gameDifficulty=diff||'easy';
+  isTutorial=false;
+  restoreDefaultMap();
   gameStarted=true;
   buildWaveQueue(); waveStarted=false;
   document.getElementById('readyBtn').disabled=false;
