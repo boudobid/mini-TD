@@ -164,6 +164,8 @@
   <br>
   <button id="readyBtn" onclick="readyWave()" disabled>준비</button>
   <span id="readyTimer"></span>
+  <button id="skipBtn" onclick="skipWave()" disabled style="display:none;">⏭ 스킵</button>
+  <span id="skipTimer"></span>
 </div>
 
 <div id="bossBar" style="display:none;width:300px;height:20px;background:#444;margin:5px auto;">
@@ -183,7 +185,7 @@ let gameDifficulty='easy';
 let waveStarted=false, preparing=false;
 let spawnCount=0, spawnLimit=8;
 let gameOver=false, gameSpeed=1;
-let spawnTick=0, timeTick=0;
+let spawnTick=0, timeTick=0, waveElapsedTick=0;
 const TICK_INTERVAL=60;
 
 // 가시 와이어 쿨타임 (프레임 기준, 60fps × 10초)
@@ -206,12 +208,31 @@ const TOWER_META={
 };
 
 // 영구 저장 (상점 재화, 해금, 업적)
+const VALID_UNLOCKABLE=['fighter','archer','puppeteer','lightning','wire'];
+const VALID_ACH_KEYS=['first_lose','first_win','counter_charge'];
+const MAX_GOLD=100000; // 합리적 상한 (치트 의심값 차단)
+function sanitizePersistent(raw){
+  let gold=Number(raw.gold);
+  if(!Number.isFinite(gold)||gold<0) gold=0;
+  if(gold>MAX_GOLD) gold=0; // 비정상적 과다 코인은 초기화
+  let unlocked=Array.isArray(raw.unlocked)?raw.unlocked:[];
+  unlocked=unlocked.filter(t=>VALID_UNLOCKABLE.includes(t));
+  if(!unlocked.includes('fighter')) unlocked.push('fighter');
+  if(!unlocked.includes('archer')) unlocked.push('archer');
+  let achievements=raw.achievements&&typeof raw.achievements==='object'?raw.achievements:{};
+  Object.keys(achievements).forEach(k=>{ if(!VALID_ACH_KEYS.includes(k)) delete achievements[k]; });
+  return { gold, unlocked, achievements };
+}
 function loadPersistent(){
-  return {
-    gold: parseInt(localStorage.getItem('mtd_gold')||'0'),
-    unlocked: JSON.parse(localStorage.getItem('mtd_unlocked')||'["fighter","archer"]'),
-    achievements: JSON.parse(localStorage.getItem('mtd_achievements')||'{}')
-  };
+  let raw;
+  try {
+    raw={
+      gold: parseInt(localStorage.getItem('mtd_gold')||'0'),
+      unlocked: JSON.parse(localStorage.getItem('mtd_unlocked')||'["fighter","archer"]'),
+      achievements: JSON.parse(localStorage.getItem('mtd_achievements')||'{}')
+    };
+  } catch(e){ raw={ gold:0, unlocked:['fighter','archer'], achievements:{} }; }
+  return sanitizePersistent(raw);
 }
 function savePersistent(){
   localStorage.setItem('mtd_gold',persistent.gold);
@@ -348,7 +369,7 @@ function resetGame(){
   towers.length=0; enemies.length=0; dolls.length=0; wires.length=0; lightnings.length=0;
   waveStarted=false; preparing=false; spawnCount=0;
   placingType=null; selectedSlot=-1; selectedTower=null;
-  spawnTick=0; timeTick=0; wireCoolTick=0; wireEquipped=false;
+  spawnTick=0; timeTick=0; waveElapsedTick=0; wireCoolTick=0; wireEquipped=false;
   isTutorial=false; tutorialStep=0;
   document.getElementById('tutorialGuide').style.display='none';
   document.getElementById('tutorialPrompt').style.display='none';
@@ -409,7 +430,7 @@ function startTutorial(){
   equipped.length=0; equipped.push('fighter','archer');
   towers.length=0; enemies.length=0; dolls.length=0; wires.length=0; lightnings.length=0;
   gameStarted=true; gameOver=false; waveStarted=false;
-  spawnCount=0; spawnTick=0; timeTick=0;
+  spawnCount=0; spawnTick=0; timeTick=0; waveElapsedTick=0;
   placingType=null; selectedSlot=-1; selectedTower=null;
   wireCoolTick=0; wireEquipped=false;
   buildWaveQueue();
@@ -940,6 +961,7 @@ function readyWave(){
       clearInterval(countdown);
       timerEl.textContent='';
       waveStarted=true; preparing=false;
+      waveElapsedTick=0;
       btn.style.display='none';
     }
   },1000);
@@ -951,7 +973,7 @@ function nextWave(){
       if(spawnCount>=spawnLimit&&enemies.length===0) finishTutorial();
       return;
     }
-    wave++; spawnCount=0; spawnTick=0; timeTick=0;
+    wave++; spawnCount=0; spawnTick=0; timeTick=0; waveElapsedTick=0;
     buildWaveQueue(); waveStarted=true;
     return;
   }
@@ -960,8 +982,51 @@ function nextWave(){
     return;
   }
   wave++; timeLeft=(wave===10||wave===20||wave===25)?120:60;
-  spawnCount=0; spawnTick=0; timeTick=0;
+  spawnCount=0; spawnTick=0; timeTick=0; waveElapsedTick=0;
   buildWaveQueue(); waveStarted=true;
+}
+
+function canSkip(){
+  if(!waveStarted) return false;
+  const isLast = isTutorial ? wave>=3 : wave>=25;
+  if(isLast) return false;
+  const threshold=(wave===10||wave===20||wave===25)?2400:1500;
+  return waveElapsedTick>=threshold;
+}
+function skipWave(){
+  if(!canSkip()) return;
+  const remaining=waveQueue.slice(spawnCount);
+  if(isTutorial){
+    wave++;
+    buildWaveQueue();
+    waveQueue=remaining.concat(waveQueue);
+    spawnLimit=waveQueue.length;
+    spawnCount=0; spawnTick=0; timeTick=0; waveElapsedTick=0;
+    waveStarted=true;
+    return;
+  }
+  wave++;
+  timeLeft=(wave===10||wave===20||wave===25)?120:60;
+  buildWaveQueue();
+  waveQueue=remaining.concat(waveQueue);
+  spawnLimit=waveQueue.length;
+  spawnCount=0; spawnTick=0; timeTick=0; waveElapsedTick=0;
+  waveStarted=true;
+}
+function updateSkipUI(){
+  const skipBtn=document.getElementById('skipBtn');
+  const skipTimer=document.getElementById('skipTimer');
+  if(!skipBtn) return;
+  const isLast = isTutorial ? wave>=3 : wave>=25;
+  if(waveStarted && !isLast){
+    skipBtn.style.display='inline-block';
+    const threshold=(wave===10||wave===20||wave===25)?2400:1500;
+    const left=threshold-waveElapsedTick;
+    if(left<=0){ skipBtn.disabled=false; skipTimer.textContent=''; }
+    else { skipBtn.disabled=true; skipTimer.textContent=' ('+Math.ceil(left/60)+'s)'; }
+  } else {
+    skipBtn.style.display='none'; skipTimer.textContent='';
+  }
 }
 
 class Tower{
@@ -1325,6 +1390,7 @@ function loop(now){
         }
         if(waveStarted){
           timeTick++;
+          waveElapsedTick++;
           if(timeTick>=TICK_INTERVAL){
             timeTick=0;
             timeLeft--;
@@ -1341,6 +1407,7 @@ function loop(now){
   renderSkillSlot();
   draw();
   updateTowerCountUI();
+  updateSkipUI();
   goldEl.textContent=gold;
   hpEl.textContent=hp;
   waveEl.textContent=wave;
@@ -1370,7 +1437,7 @@ function startGame(diff){
   isTutorial=false;
   restoreDefaultMap();
   gameStarted=true;
-  buildWaveQueue(); waveStarted=false;
+  buildWaveQueue(); waveStarted=false; waveElapsedTick=0;
   document.getElementById('readyBtn').disabled=false;
   document.getElementById('readyBtn').style.display='inline-block';
   renderSlotBar(); renderSkillSlot();
