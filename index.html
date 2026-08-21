@@ -118,8 +118,8 @@
   <div id="popupStats" style="font-size:11px;color:#ddd;line-height:1.5;"></div>
   <hr style="border:0;border-top:1px solid #555;margin:2px 0;">
   <div id="popupUpgradeInfo" style="font-size:11px;color:#FFD700;line-height:1.4;"></div>
-  <button id="popupUpgrade" style="cursor:pointer;padding:5px 10px;font-size:13px;background:#2a4a2a;color:#fff;border:1px solid #5a5;border-radius:4px;">⬆ 강화 (100💰)</button>
-  <button id="popupSell" style="cursor:pointer;padding:5px 10px;font-size:13px;background:#4a2a2a;color:#fff;border:1px solid #a55;border-radius:4px;">💰 판매 (20%)</button>
+  <button id="popupUpgrade" style="cursor:pointer;padding:5px 10px;font-size:13px;background:#2a4a2a;color:#fff;border:1px solid #5a5;border-radius:4px;">⬆ 강화 (100💰) [E]</button>
+  <button id="popupSell" style="cursor:pointer;padding:5px 10px;font-size:13px;background:#4a2a2a;color:#fff;border:1px solid #a55;border-radius:4px;">💰 판매 (20%) [X]</button>
 </div>
 
 <div id="tutorialPrompt" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:40;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
@@ -162,9 +162,9 @@
     <button onclick="setSpeed(3)" id="spd3">▶▶▶ 3배</button>
   </div>
   <br>
-  <button id="readyBtn" onclick="readyWave()" disabled>준비</button>
+  <button id="readyBtn" onclick="readyWave()" disabled>준비 [Q]</button>
   <span id="readyTimer"></span>
-  <button id="skipBtn" onclick="skipWave()" disabled style="display:none;">⏭ 스킵</button>
+  <button id="skipBtn" onclick="skipWave()" disabled style="display:none;">⏭ 스킵 [Q]</button>
   <span id="skipTimer"></span>
 </div>
 
@@ -370,6 +370,7 @@ function resetGame(){
   waveStarted=false; preparing=false; spawnCount=0;
   placingType=null; selectedSlot=-1; selectedTower=null;
   spawnTick=0; timeTick=0; waveElapsedTick=0; wireCoolTick=0; wireEquipped=false;
+  carryQueue=[];
   isTutorial=false; tutorialStep=0;
   document.getElementById('tutorialGuide').style.display='none';
   document.getElementById('tutorialPrompt').style.display='none';
@@ -537,6 +538,17 @@ document.addEventListener('keydown',e=>{
   const n=parseInt(e.key);
   if(n>=1&&n<=MAX_SLOTS) selectSlot(n-1);
   if(e.key==='r'||e.key==='R') selectSkillWire();
+  // 타워 팝업 단축키
+  if((e.key==='e'||e.key==='E')&&selectedTower){
+    upgradeTower(selectedTower); showTowerPopup(selectedTower);
+  }
+  if((e.key==='x'||e.key==='X')&&selectedTower){
+    sellTower(selectedTower); hideTowerPopup();
+  }
+  if(e.key==='q'||e.key==='Q'){
+    if(waveStarted) skipWave();
+    else readyWave();
+  }
 });
 
 function equipTower(type){
@@ -902,6 +914,7 @@ function getEnemyInfo(e){
 }
 
 let waveQueue=[];
+let carryQueue=[]; // 스킵 시 이전 웨이브의 남은 소환 (동시 진행용)
 function buildWaveQueue(){
   waveQueue=[];
   if(isTutorial){
@@ -941,9 +954,15 @@ function buildWaveQueue(){
 }
 
 function spawnEnemy(){
-  if(!waveStarted||spawnCount>=spawnLimit) return;
-  enemies.push(new Enemy(waveQueue[spawnCount]));
-  spawnCount++;
+  if(!waveStarted) return;
+  if(spawnCount<spawnLimit){
+    enemies.push(new Enemy(waveQueue[spawnCount]));
+    spawnCount++;
+  }
+  // 이전 웨이브 남은 소환을 동시에 진행
+  if(carryQueue.length>0){
+    enemies.push(new Enemy(carryQueue.shift()));
+  }
 }
 
 function readyWave(){
@@ -995,23 +1014,18 @@ function canSkip(){
 }
 function skipWave(){
   if(!canSkip()) return;
-  const remaining=waveQueue.slice(spawnCount);
+  // 이전 웨이브 남은 소환은 carryQueue로 동시 진행, 새 웨이브는 독립 소환
+  carryQueue=carryQueue.concat(waveQueue.slice(spawnCount));
   if(isTutorial){
     wave++;
-    buildWaveQueue();
-    waveQueue=remaining.concat(waveQueue);
-    spawnLimit=waveQueue.length;
     spawnCount=0; spawnTick=0; timeTick=0; waveElapsedTick=0;
-    waveStarted=true;
+    buildWaveQueue(); waveStarted=true;
     return;
   }
   wave++;
   timeLeft=(wave===10||wave===20||wave===25)?120:60;
-  buildWaveQueue();
-  waveQueue=remaining.concat(waveQueue);
-  spawnLimit=waveQueue.length;
   spawnCount=0; spawnTick=0; timeTick=0; waveElapsedTick=0;
-  waveStarted=true;
+  buildWaveQueue(); waveStarted=true;
 }
 function updateSkipUI(){
   const skipBtn=document.getElementById('skipBtn');
@@ -1166,10 +1180,10 @@ function showTowerPopup(tower){
   upBtn.disabled = !canUpgrade;
   upBtn.style.opacity = canUpgrade ? '1' : '0.4';
   upBtn.textContent = tower.type==='fighter'
-    ? (tower.upgraded ? '✓ 강화됨' : '⬆ 강화 ('+FIGHTER_UPGRADE_COST+'💰)')
+    ? (tower.upgraded ? '✓ 강화됨' : '⬆ 강화 ('+FIGHTER_UPGRADE_COST+'💰) [E]')
     : '🔒 강화 불가';
   const refund=getSellRefund(tower);
-  sellBtn.textContent='💰 판매 ('+refund+'골드)';
+  sellBtn.textContent='💰 판매 ('+refund+'골드) [X]';
   upBtn.onclick=()=>{ upgradeTower(tower); showTowerPopup(tower); };
   sellBtn.onclick=()=>{ sellTower(tower); hideTowerPopup(); };
 }
