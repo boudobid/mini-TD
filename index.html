@@ -1107,7 +1107,7 @@ class Tower{
       this.type==='marionette'?'#ff44aa':
       this.type==='puppeteer'?'#cc88ff':'pink';
     ctx.beginPath(); ctx.arc(this.x,this.y,10,0,Math.PI*2); ctx.fill();
-    if(this.type==='fighter'&&this.upgraded){
+    if(this.upgraded){
       ctx.strokeStyle='#FFD700'; ctx.lineWidth=2;
       ctx.beginPath(); ctx.arc(this.x,this.y,13,0,Math.PI*2); ctx.stroke();
       ctx.lineWidth=1;
@@ -1166,20 +1166,20 @@ function showTowerPopup(tower){
     '공격속도: <b>'+s.atkSpeed+'</b><br>'+
     '대미지: <b>'+s.dmg+'</b>';
   // 강화 정보
-  if(tower.type==='fighter'){
-    if(tower.upgraded){
-      upInfoEl.textContent='✓ 강화 적용: 은신 적(닌자/유령) 감지 가능';
-    }else{
-      upInfoEl.textContent='강화 효과: 은신 적(닌자/유령) 감지 가능';
-    }
+  const upgradable=['fighter','archer','puppeteer'];
+  if(upgradable.includes(tower.type)){
+    const effect = tower.type==='fighter' ? '은신 적(닌자/유령) 감지 가능'
+      : tower.type==='archer' ? '사거리 +10 증가'
+      : '소환 속도 5초 가속';
+    upInfoEl.textContent = tower.upgraded ? ('✓ 강화 적용: '+effect) : ('강화 효과: '+effect);
   }else{
     upInfoEl.textContent='이 타워는 강화 불가';
   }
-  // 강화 버튼: 파이터 & 미강화 & 골드 충분일 때만 활성화
-  const canUpgrade = tower.type==='fighter' && !tower.upgraded && gold>=FIGHTER_UPGRADE_COST;
+  // 강화 버튼: 강화 가능 타워 & 미강화 & 골드 충분일 때만 활성화
+  const canUpgrade = upgradable.includes(tower.type) && !tower.upgraded && gold>=FIGHTER_UPGRADE_COST;
   upBtn.disabled = !canUpgrade;
   upBtn.style.opacity = canUpgrade ? '1' : '0.4';
-  upBtn.textContent = tower.type==='fighter'
+  upBtn.textContent = upgradable.includes(tower.type)
     ? (tower.upgraded ? '✓ 강화됨' : '⬆ 강화 ('+FIGHTER_UPGRADE_COST+'💰) [E]')
     : '🔒 강화 불가';
   const refund=getSellRefund(tower);
@@ -1193,11 +1193,17 @@ function hideTowerPopup(){
 }
 
 function upgradeTower(tower){
-  if(tower.type!=='fighter'||tower.upgraded) return;
+  const upgradable=['fighter','archer','puppeteer'];
+  if(!upgradable.includes(tower.type)||tower.upgraded) return;
   if(gold<FIGHTER_UPGRADE_COST) return;
   gold-=FIGHTER_UPGRADE_COST;
   tower.upgraded=true;
-  // 은신 감지 획득 (공격 범위/데미지는 동일)
+  if(tower.type==='archer'){
+    tower.range+=10; // 사거리 10 증가
+  }else if(tower.type==='puppeteer'){
+    tower.coolMax=Math.max(0,tower.coolMax-300); // 소환 5초(300틱) 가속
+  }
+  // 파이터: 은신 감지 획득 (공격 범위/데미지는 동일)
 }
 
 function sellTower(tower){
