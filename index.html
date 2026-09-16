@@ -70,31 +70,42 @@
     <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:silver;display:inline-block;border-radius:2px;outline:1px solid gold;"></span><b>기사단장</b> <small style="color:#aaa;">체력 1200 · 특성: 보스/소환(기마병·기사)</small></div>
     </div>
   </div>
-  <div id="inventoryUI" style="display:none;margin-top:15px;background:#222;padding:10px;border:1px solid #555;">
-    <div class="noscroll" style="max-height:260px;overflow-y:auto;padding-right:4px;">
-    <h4>장착 타워 (최대 6)</h4>
+  <div id="inventoryUI" style="display:none;margin-top:15px;background:#222;padding:10px;border:1px solid #555;border-radius:6px;max-width:420px;text-align:left;">
+    <h4 style="margin:0 0 8px;text-align:center;">🎒 인벤토리</h4>
+    <h4 style="font-size:13px;margin:4px 0;">장착 타워 (최대 6)</h4>
     <div id="equipList"></div>
     <hr>
-    <h4>🟩 지상 설치</h4>
+    <div id="invCatTabs" style="display:flex;gap:6px;justify-content:center;margin-bottom:8px;flex-wrap:wrap;"></div>
+    <div class="noscroll" style="max-height:260px;overflow-y:auto;padding-right:4px;">
+    <div id="invCat_지상">
+    <h4 style="font-size:13px;">🟩 지상 설치</h4>
     <button id="inv_fighter" onclick="equipTower('fighter')">🗡 파이터</button>
     <button id="inv_puppeteer" onclick="equipTower('puppeteer')">🎭 인형술사</button>
-    <h4>🟨 언덕 설치</h4>
+    </div>
+    <div id="invCat_언덕">
+    <h4 style="font-size:13px;">🟨 언덕 설치</h4>
     <button id="inv_archer" onclick="equipTower('archer')">🏹 궁수</button>
     <button id="inv_lightning" onclick="equipTower('lightning')">⚡ 번개 마법사</button>
-    <h4>🟥 특수 (길에 설치)</h4>
+    </div>
+    <div id="invCat_특수">
+    <h4 style="font-size:13px;">🟥 특수 (길에 설치)</h4>
      <div id="wireSkillInfo" style="display:none;background:#1a1a1a;border:1px solid #555;border-radius:6px;padding:8px 12px;margin:4px 0;font-size:13px;color:#ccc;">
        <span style="font-size:18px;color:#aaff44;">✦</span> <b>가시 와이어</b><br>
        <small style="color:#aaa;">경로에 설치 | 쿨타임 10초 | R키로 선택</small><br>
        <small style="color:#FFD700;">최대 5회 밟히면 파괴 | 슬로우+출혈 5초 부여</small>
      </div>
      <button id="inv_wire" onclick="equipTower('wire')"><span style="color:#aaff44;">✦</span> 가시 와이어 <small style="color:#aaa" id="wireEquipHint">(미장착 · R키)</small></button>
-     <h4>🔒 엘리트</h4>
+    </div>
+    <div id="invCat_챌린지">
+     <h4 style="font-size:13px;">🔥 챌린지</h4>
      <button id="inv_marionette" onclick="equipTower('marionette')">🎪 마리오네트 <small style="color:#aaa;">(역돌격 업적 필요)</small></button>
+    </div>
     </div>
      </div>
      <div id="shopUI" style="display:none;margin-top:15px;background:#222;padding:14px;border:1px solid #555;border-radius:6px;max-width:420px;text-align:left;">
      <h4 style="margin:0 0 8px;text-align:center;">🛒 상점</h4>
      <div style="text-align:center;margin-bottom:8px;"><span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:radial-gradient(#ffe066,#daa520);border:1px solid #b8860b;vertical-align:-1px;"></span> 보유 코인: <span id="shopGold" style="color:#FFD700;">0</span></div>
+     <div id="shopCatTabs" style="display:flex;gap:6px;justify-content:center;margin-bottom:8px;flex-wrap:wrap;"></div>
      <div class="noscroll" style="max-height:260px;overflow-y:auto;padding-right:4px;">
      <div id="shopList"></div>
      </div>
@@ -197,6 +208,27 @@ const equipped=[], towers=[], enemies=[], dolls=[], wires=[], lightnings=[];
 const PATH_BLOCK_RADIUS=15, TOWER_BLOCK_RADIUS=20, MAX_SLOTS=6;
 let selectedSlot=-1;
 let achCat='all'; // 업적 카테고리 필터: 'all' | '일반' | '챌린지'
+let shopCat='all', invCat='all'; // 상점/인벤토리 카테고리 필터
+const TOWER_CATEGORY={
+  fighter:'지상', puppeteer:'지상',
+  archer:'언덕', lightning:'언덕',
+  wire:'특수',
+  marionette:'챌린지'
+};
+const CAT_TABS=[['all','전체'],['지상','🟩 지상'],['언덕','🟨 언덕'],['특수','🟥 특수'],['챌린지','🔥 챌린지']];
+function renderCatTabs(containerId, current, onClick){
+  const tabs=document.getElementById(containerId);
+  if(!tabs) return;
+  tabs.innerHTML='';
+  CAT_TABS.forEach(([key,label])=>{
+    const b=document.createElement('button');
+    const active=current===key;
+    b.textContent=label;
+    b.style.cssText='padding:5px 10px;font-size:12px;cursor:pointer;border-radius:4px;border:1px solid '+(active?'#FFD700':'#555')+';background:'+(active?'#332b00':'#1a1a1a')+';color:'+(active?'#FFD700':'#ccc')+';';
+    b.onclick=()=>onClick(key);
+    tabs.appendChild(b);
+  });
+}
 
 const TOWER_META={
   fighter:   {label:'🗡', name:'파이터',   cost:80},
@@ -280,7 +312,7 @@ const TUTORIAL_STEPS=[
   {title:'🎓 환영합니다!', body:'튜토리얼을 시작합니다. 이곳은 연습 맵이니 편하게 진행하세요.'},
   {title:'🗺️ 지상 vs 언덕', body:'타워는 설치 위치가 다릅니다.\n🗡 파이터 → 지상 설치 (길 주변 평지)\n🏹 궁수 → 언덕 설치 (노란색 원 영역)\n캔버스의 노란 원이 언덕입니다.'},
   {title:'🕹️ 타워 설치', body:'하단 슬롯에서 파이터(1번)·궁수(2번)를 선택해 설치해보세요.\n골드는 10,000이니 마음껏 시도 가능합니다.'},
-  {title:'⬆️ 강화 기능', body:'설치된 타워를 클릭하면 정보창이 뜹니다.\n파이터는 100골드로 강화 → 은신 적(닌자/유령) 감지!\n강화된 파이터는 금색 테두리로 표시됩니다.'},
+  {title:'⬆️ 강화 기능', body:'설치된 타워를 클릭하면 정보창이 뜹니다.\n강화 시 단계별 테두리 색상이 변합니다:\n흰(1) → 연두(2) → 파랑(3) → 보라(4)\n파이터: 1단계 밝은 눈(은신 감지) → 2단계 긴 팔(사거리+) → 3단계 주먹은 두개(공속 2배) → 4단계 강철 주먹(대미지+15)'},
   {title:'👹 적의 특성', body:'이번 튜토리얼 적:\n• 방랑자 - 기본 적\n• 닌자 - 은신 (파이터 강화 전엔 공격 불가)\n• 골렘 - 처치 시 미니골렘 3마리로 분열'},
   {title:'🛡️ 기지 체력', body:'적이 길 끝(초록 기지)에 도달하면 기지 체력이 깎입니다.\n체력이 0이 되면 게임 오버!\n단, 튜토리얼에서는 체력이 1 이하로 떨어지지 않으니 안심하세요.'},
   {title:'🚀 시작!', body:'제한시간이 없으니 천천히 진행하세요.\n3웨이브를 막아내면 튜토리얼 완료!\n아래 준비 버튼을 눌러 시작하세요.'}
@@ -339,7 +371,7 @@ function showOverlay(type){
     overlay.style.background='rgba(60,0,0,0.88)';
     msg.style.color='#ff4444';
     msg.textContent='💀 게임 오버';
-    const reward=wave*8;
+    const reward=wave*4;
     let bonus='';
     if(unlockAchievement('first_lose')){
       persistent.gold+=50; bonus=' 🏅업적 달성: 첫 상처 (+50 코인)';
@@ -354,8 +386,8 @@ function showOverlay(type){
     if(unlockAchievement('first_win')){
       persistent.gold+=50; bonus=' 🏅업적 달성: 첫 승리 (+50 코인)';
     }
-    sub.textContent='모든 웨이브를 막아냈습니다! +300 코인 획득!'+bonus;
-    persistent.gold+=300; savePersistent();
+    sub.textContent='모든 웨이브를 막아냈습니다! +125 코인 획득!'+bonus;
+    persistent.gold+=125; savePersistent();
   }
   overlay.style.display='flex';
 }
@@ -583,10 +615,17 @@ function closePanel(id){ document.getElementById(id).style.display='none'; }
 function closeAllPanels(except){
   PANEL_IDS.forEach(id=>{ if(id!==except) closePanel(id); });
 }
+function renderInvTabs(){
+  renderCatTabs('invCatTabs', invCat, (k)=>{ invCat=k; renderInvTabs(); });
+  ['지상','언덕','특수','챌린지'].forEach(cat=>{
+    const el=document.getElementById('invCat_'+cat);
+    if(el) el.style.display=(invCat==='all'||invCat===cat)?'block':'none';
+  });
+}
 function toggleInventory(){
   const isOpen=document.getElementById('inventoryUI').style.display==='block';
   closeAllPanels(isOpen?null:'inventoryUI');
-  if(!isOpen){ openPanel('inventoryUI'); renderInventoryButtons(); }
+  if(!isOpen){ openPanel('inventoryUI'); renderInventoryButtons(); renderInvTabs(); }
 }
 
 function toggleCodex(){
@@ -620,36 +659,47 @@ function renderPersistent(){
 function renderShop(){
   const sg=document.getElementById('shopGold');
   if(sg) sg.textContent=persistent.gold;
+  renderCatTabs('shopCatTabs', shopCat, (k)=>{ shopCat=k; renderShop(); });
   const el=document.getElementById('shopList');
   if(!el) return;
   el.innerHTML='';
-  Object.keys(SHOP_PRICES).forEach(type=>{
-    const meta=TOWER_META[type];
-    const unlocked=persistent.unlocked.includes(type);
-    const price=SHOP_PRICES[type];
-    const div=document.createElement('div');
-    div.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:6px;border:1px solid #555;margin:4px 0;border-radius:4px;';
-    const label=document.createElement('span');
-    label.textContent=meta.label+' '+meta.name;
-    div.appendChild(label);
-    const btn=document.createElement('button');
-    if(unlocked){ btn.textContent='✓ 해금됨'; btn.disabled=true; }
-    else if(persistent.gold<price){ btn.textContent='💰'+price+' (부족)'; btn.disabled=true; }
-    else{ btn.textContent='💰'+price+' 구매'; btn.onclick=()=>buyTower(type); }
-    div.appendChild(btn);
-    el.appendChild(div);
-  });
-  const mMeta=TOWER_META['marionette'];
-  const mDiv=document.createElement('div');
-  mDiv.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:6px;border:1px solid #555;margin:4px 0;border-radius:4px;';
-  const mLabel=document.createElement('span');
-  mLabel.textContent=mMeta.label+' '+mMeta.name;
-  mDiv.appendChild(mLabel);
-  const mBtn=document.createElement('button');
-  if(persistent.achievements['counter_charge']){ mBtn.textContent='✓ 업적 해금'; mBtn.disabled=true; }
-  else{ mBtn.textContent='🔒 역돌격 필요'; mBtn.disabled=true; }
-  mDiv.appendChild(mBtn);
-  el.appendChild(mDiv);
+  const shopItems=[
+    {type:'puppeteer', price:SHOP_PRICES.puppeteer},
+    {type:'lightning', price:SHOP_PRICES.lightning},
+    {type:'wire', price:SHOP_PRICES.wire},
+    {type:'marionette', price:null}
+  ];
+  shopItems
+    .filter(item=>shopCat==='all'||TOWER_CATEGORY[item.type]===shopCat)
+    .forEach(item=>{
+      const type=item.type;
+      const meta=TOWER_META[type];
+      const isAch = type==='marionette';
+      const unlocked = isAch ? !!persistent.achievements['counter_charge'] : persistent.unlocked.includes(type);
+      const div=document.createElement('div');
+      div.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:6px;border:1px solid #555;margin:4px 0;border-radius:4px;';
+      const label=document.createElement('span');
+      label.textContent=meta.label+' '+meta.name;
+      div.appendChild(label);
+      const btn=document.createElement('button');
+      if(isAch){
+        if(unlocked){ btn.textContent='✓ 업적 해금'; btn.disabled=true; }
+        else{ btn.textContent='🔒 역돌격 필요'; btn.disabled=true; }
+      }else{
+        const price=item.price;
+        if(unlocked){ btn.textContent='✓ 해금됨'; btn.disabled=true; }
+        else if(persistent.gold<price){ btn.textContent='💰'+price+' (부족)'; btn.disabled=true; }
+        else{ btn.textContent='💰'+price+' 구매'; btn.onclick=()=>buyTower(type); }
+      }
+      div.appendChild(btn);
+      el.appendChild(div);
+    });
+  if(el.children.length===0){
+    const empty=document.createElement('div');
+    empty.style.cssText='padding:10px;text-align:center;color:#888;font-size:13px;';
+    empty.textContent='해당 카테고리에 상품이 없습니다.';
+    el.appendChild(empty);
+  }
 }
 
 function buyTower(type){
@@ -761,10 +811,12 @@ class Wire {
 }
 
 class Doll{
-  constructor(hp=250){
+  constructor(hp=250, opts={}){
     this.x=path[path.length-1].x; this.y=path[path.length-1].y;
     this.hp=hp; this.maxHp=hp; this.speed=0.8;
     this.dead=false; this.pathIndex=path.length-2;
+    this.damageReduction=opts.damageReduction||0;
+    this.explosive=opts.explosive||false;
   }
   update(){
     if(this.dead) return;
@@ -777,9 +829,17 @@ class Doll{
     enemies.forEach(e=>{
       if(this.dead) return;
       if(Math.hypot(e.x-this.x,e.y-this.y)<12){
-        const eHp=e.hp; e.hp-=this.hp; this.hp-=eHp;
+        const eHp=e.hp; e.hp-=this.hp;
+        this.hp-=Math.max(0, eHp-this.damageReduction);
         if(e.hp<=0) e.killedByDoll=true;
-        if(this.hp<=0) this.dead=true;
+        if(this.hp<=0){
+          this.dead=true;
+          if(this.explosive){
+            const hit=enemies.filter(en=>Math.hypot(en.x-this.x,en.y-this.y)<30);
+            hit.forEach(en=>{ en.hp-=80; });
+            if(hit.length>0) lightnings.push({segments:hit.map(en=>[this.x,this.y,en.x,en.y]),life:15});
+          }
+        }
       }
     });
   }
@@ -1052,12 +1112,15 @@ class Tower{
     if(type==='lightning'){   this.range=150; this.damage=50;  this.coolMax=240; }
     if(type==='marionette'){  this.range=150; this.damage=50;  this.coolMax=120; }
     this.baseRange=this.range; this.cool=0; this.summonCool=0;
-    this.upgraded=false; // 파이터 강화 여부 (은신 감지)
+    this.upgradeLevel=0; // 강화 단계 (0~5)
   }
   update(){
     if(this.type==='puppeteer'){
       if(this.cool>0){ this.cool--; return; }
-      dolls.push(new Doll()); this.cool=this.coolMax; return;
+      const lvl=this.upgradeLevel;
+      const dollHp=250+(lvl>=2?100:0);
+      const dollOpts={damageReduction:lvl>=3?10:0, explosive:lvl>=5};
+      dolls.push(new Doll(dollHp, dollOpts)); this.cool=this.coolMax; return;
     }
     if(this.type==='lightning'){
       if(this.cool>0){ this.cool--; return; }
@@ -1092,7 +1155,7 @@ class Tower{
     const target=enemies.find(e=>{
       if(!(Math.hypot(e.x-this.x,e.y-this.y)<this.range)) return false;
       // 파이터는 강화 전까지 은신 적(닌자/유령) 타겟팅 불가
-      if(!this.upgraded && this.type==='fighter' && e.hidden) return false;
+      if(this.type==='fighter' && this.upgradeLevel<1 && e.hidden) return false;
       return true;
     });
     if(!target) return;
@@ -1107,8 +1170,8 @@ class Tower{
       this.type==='marionette'?'#ff44aa':
       this.type==='puppeteer'?'#cc88ff':'pink';
     ctx.beginPath(); ctx.arc(this.x,this.y,10,0,Math.PI*2); ctx.fill();
-    if(this.upgraded){
-      ctx.strokeStyle='#FFD700'; ctx.lineWidth=2;
+    if(this.upgradeLevel>0){
+      ctx.strokeStyle=UPGRADE_COLORS[this.upgradeLevel]; ctx.lineWidth=2;
       ctx.beginPath(); ctx.arc(this.x,this.y,13,0,Math.PI*2); ctx.stroke();
       ctx.lineWidth=1;
     }
@@ -1119,11 +1182,22 @@ class Tower{
   }
 }
 
-const FIGHTER_UPGRADE_COST=100;
+const UPGRADE_COLORS=['','#ffffff','#90EE90','#6699ff','#cc66ff','#FFD700'];
+const UPGRADE_LABELS=['','흰','연두','파랑','보라','금'];
+const FIGHTER_UPGRADE_NAMES=['','밝은 눈','긴 팔','주먹은 두개','강철 주먹'];
+const FIGHTER_UPGRADE_DESC=['','은신 적 감지','사거리 +2.5','공격 속도 2배','대미지 +15'];
+const PUPPETEER_UPGRADE_NAMES=['','빠른 제작','질긴 천','철판을 붙인 인형들','더 빠른 제작','솜 대신 폭약'];
+const PUPPETEER_UPGRADE_DESC=['','소환 3초 가속','인형 체력 +100','받는 피해 10 감소','소환 5초 가속','체력 0 시 범위 30에 80 대미지'];
+const PUPPETEER_UPGRADE_COSTS=[200,500,600,950,1350];
+function getMaxUpgrade(type){ return type==='puppeteer' ? 5 : 4; }
+function getUpgradeCost(type, level){
+  if(type==='puppeteer') return PUPPETEER_UPGRADE_COSTS[level]||0;
+  return 100*(level+1);
+}
 
 function getSellRefund(tower){
   let total=TOWER_META[tower.type]?.cost||0;
-  if(tower.upgraded) total+=FIGHTER_UPGRADE_COST;
+  for(let l=0;l<tower.upgradeLevel;l++) total+=getUpgradeCost(tower.type,l);
   return Math.floor(total*0.2);
 }
 
@@ -1167,21 +1241,42 @@ function showTowerPopup(tower){
     '대미지: <b>'+s.dmg+'</b>';
   // 강화 정보
   const upgradable=['fighter','archer','puppeteer'];
+  const maxUp=getMaxUpgrade(tower.type);
   if(upgradable.includes(tower.type)){
-    const effect = tower.type==='fighter' ? '은신 적(닌자/유령) 감지 가능'
-      : tower.type==='archer' ? '사거리 +10 증가'
-      : '소환 속도 5초 가속';
-    upInfoEl.textContent = tower.upgraded ? ('✓ 강화 적용: '+effect) : ('강화 효과: '+effect);
+    if(tower.type==='fighter'){
+      if(tower.upgradeLevel>=maxUp){
+        upInfoEl.textContent='✓ 최대 강화 '+tower.upgradeLevel+'/'+maxUp+' · '+FIGHTER_UPGRADE_NAMES[tower.upgradeLevel]+': '+FIGHTER_UPGRADE_DESC[tower.upgradeLevel];
+      }else{
+        const nl=tower.upgradeLevel+1;
+        upInfoEl.textContent='강화 '+tower.upgradeLevel+'/'+maxUp+' · '+FIGHTER_UPGRADE_NAMES[nl]+': '+FIGHTER_UPGRADE_DESC[nl];
+      }
+    }else if(tower.type==='puppeteer'){
+      if(tower.upgradeLevel>=maxUp){
+        upInfoEl.textContent='✓ 최대 강화 '+tower.upgradeLevel+'/'+maxUp+' · '+PUPPETEER_UPGRADE_NAMES[tower.upgradeLevel]+': '+PUPPETEER_UPGRADE_DESC[tower.upgradeLevel];
+      }else{
+        const nl=tower.upgradeLevel+1;
+        upInfoEl.textContent='강화 '+tower.upgradeLevel+'/'+maxUp+' · '+PUPPETEER_UPGRADE_NAMES[nl]+': '+PUPPETEER_UPGRADE_DESC[nl];
+      }
+    }else{
+      const effect = '사거리 +10 증가';
+      if(tower.upgradeLevel>=maxUp){
+        upInfoEl.textContent='✓ 최대 강화 '+tower.upgradeLevel+'/'+maxUp+' · '+effect;
+      }else{
+        upInfoEl.textContent='강화 '+tower.upgradeLevel+'/'+maxUp+' · '+effect;
+      }
+    }
   }else{
     upInfoEl.textContent='이 타워는 강화 불가';
   }
-  // 강화 버튼: 강화 가능 타워 & 미강화 & 골드 충분일 때만 활성화
-  const canUpgrade = upgradable.includes(tower.type) && !tower.upgraded && gold>=FIGHTER_UPGRADE_COST;
+  // 강화 버튼: 강화 가능 타워 & 미최대 & 골드 충분일 때만 활성화
+  const canUpgrade = upgradable.includes(tower.type) && tower.upgradeLevel<maxUp && gold>=getUpgradeCost(tower.type,tower.upgradeLevel);
   upBtn.disabled = !canUpgrade;
   upBtn.style.opacity = canUpgrade ? '1' : '0.4';
-  upBtn.textContent = upgradable.includes(tower.type)
-    ? (tower.upgraded ? '✓ 강화됨' : '⬆ 강화 ('+FIGHTER_UPGRADE_COST+'💰) [E]')
-    : '🔒 강화 불가';
+  upBtn.textContent = !upgradable.includes(tower.type)
+    ? '🔒 강화 불가'
+    : tower.upgradeLevel>=maxUp
+      ? '✓ 최대 강화'
+      : '⬆ 강화 '+tower.upgradeLevel+'→'+(tower.upgradeLevel+1)+' ('+getUpgradeCost(tower.type,tower.upgradeLevel)+'💰) [E]';
   const refund=getSellRefund(tower);
   sellBtn.textContent='💰 판매 ('+refund+'골드) [X]';
   upBtn.onclick=()=>{ upgradeTower(tower); showTowerPopup(tower); };
@@ -1194,16 +1289,27 @@ function hideTowerPopup(){
 
 function upgradeTower(tower){
   const upgradable=['fighter','archer','puppeteer'];
-  if(!upgradable.includes(tower.type)||tower.upgraded) return;
-  if(gold<FIGHTER_UPGRADE_COST) return;
-  gold-=FIGHTER_UPGRADE_COST;
-  tower.upgraded=true;
-  if(tower.type==='archer'){
-    tower.range+=10; // 사거리 10 증가
+  if(!upgradable.includes(tower.type)||tower.upgradeLevel>=getMaxUpgrade(tower.type)) return;
+  const cost=getUpgradeCost(tower.type, tower.upgradeLevel);
+  if(gold<cost) return;
+  gold-=cost;
+  tower.upgradeLevel++;
+  if(tower.type==='fighter'){
+    const lvl=tower.upgradeLevel;
+    if(lvl===1){ /* 밝은 눈: 은신 감지 (update에서 처리) */ }
+    else if(lvl===2){ tower.range+=2.5; } // 긴 팔
+    else if(lvl===3){ tower.coolMax=Math.max(1,Math.floor(tower.coolMax/2)); } // 주먹은 두개: 공속 2배
+    else if(lvl===4){ tower.damage+=15; } // 강철 주먹
+  }else if(tower.type==='archer'){
+    tower.range+=10; // 단계당 사거리 +10
   }else if(tower.type==='puppeteer'){
-    tower.coolMax=Math.max(0,tower.coolMax-300); // 소환 5초(300틱) 가속
+    const lvl=tower.upgradeLevel;
+    if(lvl===1){ tower.coolMax=Math.max(60,tower.coolMax-180); } // 빠른 제작: 3초 가속
+    else if(lvl===2){ /* 질긴 천: 인형 체력+100 (Doll 생성 시 적용) */ }
+    else if(lvl===3){ /* 철판을 붙인 인형들: 받는 피해 10 감소 (Doll 생성 시 적용) */ }
+    else if(lvl===4){ tower.coolMax=Math.max(60,tower.coolMax-300); } // 더 빠른 제작: 5초 가속
+    else if(lvl===5){ /* 솜 대신 폭약: 폭발 (Doll 생성 시 적용) */ }
   }
-  // 파이터: 은신 감지 획득 (공격 범위/데미지는 동일)
 }
 
 function sellTower(tower){
