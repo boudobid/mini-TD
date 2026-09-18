@@ -88,13 +88,14 @@
     <button id="inv_lightning" onclick="equipTower('lightning')">⚡ 번개 마법사</button>
     </div>
     <div id="invCat_특수">
-    <h4 style="font-size:13px;">🟥 특수 (길에 설치)</h4>
+    <h4 style="font-size:13px;">🟥 특수 (길에 설치) <small style="color:#888;">- 1개만 장착 가능</small></h4>
      <div id="wireSkillInfo" style="display:none;background:#1a1a1a;border:1px solid #555;border-radius:6px;padding:8px 12px;margin:4px 0;font-size:13px;color:#ccc;">
        <span style="font-size:18px;color:#aaff44;">✦</span> <b>가시 와이어</b><br>
        <small style="color:#aaa;">경로에 설치 | 쿨타임 10초 | R키로 선택</small><br>
        <small style="color:#FFD700;">최대 5회 밟히면 파괴 | 슬로우+출혈 5초 부여</small>
      </div>
      <button id="inv_wire" onclick="equipTower('wire')"><span style="color:#aaff44;">✦</span> 가시 와이어 <small style="color:#aaa" id="wireEquipHint">(미장착 · R키)</small></button>
+     <button id="inv_wall" onclick="equipTower('wall')">🧱 벽 <small style="color:#aaa" id="wallEquipHint">(미장착 · R키)</small></button>
     </div>
     <div id="invCat_챌린지">
      <h4 style="font-size:13px;">🔥 챌린지</h4>
@@ -201,10 +202,13 @@ const TICK_INTERVAL=60;
 
 // 가시 와이어 쿨타임 (프레임 기준, 60fps × 10초)
 const WIRE_COOLDOWN_FRAMES = 600;
-let wireCoolTick = 0; // 0이면 설치 가능, >0이면 쿨타임 중
-let wireEquipped = false; // 가시 와이어 장착 여부
+const WALL_COOLDOWN_FRAMES = 1200; // 20초
+let wireCoolTick = 0;
+let wireEquipped = false;
+let wallCoolTick = 0;
+let wallEquipped = false;
 
-const equipped=[], towers=[], enemies=[], dolls=[], wires=[], lightnings=[];
+const equipped=[], towers=[], enemies=[], dolls=[], wires=[], walls=[], lightnings=[];
 const PATH_BLOCK_RADIUS=15, TOWER_BLOCK_RADIUS=20, MAX_SLOTS=6;
 let selectedSlot=-1;
 let achCat='all'; // 업적 카테고리 필터: 'all' | '일반' | '챌린지'
@@ -213,6 +217,7 @@ const TOWER_CATEGORY={
   fighter:'지상', puppeteer:'지상',
   archer:'언덕', lightning:'언덕',
   wire:'특수',
+  wall:'특수',
   marionette:'챌린지'
 };
 const CAT_TABS=[['all','전체'],['지상','🟩 지상'],['언덕','🟨 언덕'],['특수','🟥 특수'],['챌린지','🔥 챌린지']];
@@ -237,10 +242,11 @@ const TOWER_META={
   lightning:  {label:'⚡', name:'번개 마법사', cost:450},
   marionette: {label:'🎪', name:'마리오네트', cost:700},
   wire:       {label:'✦', name:'가시 와이어', cost:120},
+  wall:       {label:'🧱', name:'벽',         cost:250},
 };
 
 // 영구 저장 (상점 재화, 해금, 업적)
-const VALID_UNLOCKABLE=['fighter','archer','puppeteer','lightning','wire'];
+const VALID_UNLOCKABLE=['fighter','archer','puppeteer','lightning','wire','wall'];
 const VALID_ACH_KEYS=['first_lose','first_win','counter_charge'];
 const MAX_GOLD=100000; // 합리적 상한 (치트 의심값 차단)
 function sanitizePersistent(raw){
@@ -301,7 +307,7 @@ function unlockAchievement(key){
   return true;
 }
 
-const SHOP_PRICES={ puppeteer:500, lightning:550, wire:200 };
+const SHOP_PRICES={ puppeteer:500, lightning:550, wire:200, wall:350 };
 const ACHIEVEMENTS={
   first_lose:{ name:'첫 상처', desc:'첫 패배 경험 (+50 코인)', cat:'일반' },
   first_win:{ name:'첫 승리', desc:'첫 게임 클리어 (+50 코인)', cat:'일반' },
@@ -356,8 +362,12 @@ function isTooCloseToWire(x,y){
   return wires.some(w=>Math.hypot(w.x-x,w.y-y)<TOWER_BLOCK_RADIUS);
 }
 
+function isTooCloseToWall(x,y){
+  return walls.some(w=>Math.hypot(w.x-x,w.y-y)<TOWER_BLOCK_RADIUS);
+}
+
 function updateTowerCountUI(){
-  document.getElementById('towerCount').textContent=towers.length+wires.length;
+  document.getElementById('towerCount').textContent=towers.length+wires.length+walls.length;
 }
 
 function updateWireCoolUI(){}
@@ -398,10 +408,10 @@ function resetGame(){
   hideDifficulty();
   gold=100; hp=200; wave=1; timeLeft=60;
   gameOver=false; gameStarted=false;
-  towers.length=0; enemies.length=0; dolls.length=0; wires.length=0; lightnings.length=0;
+  towers.length=0; enemies.length=0; dolls.length=0; wires.length=0; walls.length=0; lightnings.length=0;
   waveStarted=false; preparing=false; spawnCount=0;
   placingType=null; selectedSlot=-1; selectedTower=null;
-  spawnTick=0; timeTick=0; waveElapsedTick=0; wireCoolTick=0; wireEquipped=false;
+  spawnTick=0; timeTick=0; waveElapsedTick=0; wireCoolTick=0; wireEquipped=false; wallCoolTick=0; wallEquipped=false;
   carryQueue=[];
   isTutorial=false; tutorialStep=0;
   document.getElementById('tutorialGuide').style.display='none';
@@ -461,11 +471,11 @@ function startTutorial(){
   hillZones=[{x:300,y:150,r:30}];
   gold=10000; hp=200; wave=1; timeLeft=9999;
   equipped.length=0; equipped.push('fighter','archer');
-  towers.length=0; enemies.length=0; dolls.length=0; wires.length=0; lightnings.length=0;
+  towers.length=0; enemies.length=0; dolls.length=0; wires.length=0; walls.length=0; lightnings.length=0;
   gameStarted=true; gameOver=false; waveStarted=false;
   spawnCount=0; spawnTick=0; timeTick=0; waveElapsedTick=0;
   placingType=null; selectedSlot=-1; selectedTower=null;
-  wireCoolTick=0; wireEquipped=false;
+  wireCoolTick=0; wireEquipped=false; wallCoolTick=0; wallEquipped=false;
   buildWaveQueue();
   document.getElementById('readyBtn').disabled=true;
   document.getElementById('readyBtn').style.display='inline-block';
@@ -527,28 +537,52 @@ function renderSlotBar(){
 function renderSkillSlot(){
   const bar=document.getElementById('skillBar');
   bar.innerHTML='';
-  if(!wireEquipped) return;
-  const isCool=wireCoolTick>0;
-  const slot=document.createElement('div');
-  slot.style.cssText=
-    'width:64px;height:64px;background:#222;'+
-    'border:2px solid '+(placingType==='wire'&&!isCool?'#0f0':isCool?'#f44':'#555')+';'+
-    'border-radius:6px;display:flex;flex-direction:column;'+
-    'align-items:center;justify-content:center;'+
-    'cursor:'+(isCool?'default':'pointer')+';'+
-    'position:relative;font-size:11px;color:#ccc;user-select:none;';
-  const badge=document.createElement('span');
-  badge.textContent='R';
-  badge.style.cssText='position:absolute;top:2px;left:4px;font-size:9px;color:#888;';
-  slot.appendChild(badge);
-  const icon=document.createElement('div');
-  icon.textContent='✦'; icon.style.fontSize='22px'; icon.style.color='#aaff44';
-  const price=document.createElement('div');
-  price.textContent='💰'+TOWER_META.wire.cost;
-  price.style.cssText='font-size:10px;color:#FFD700;margin-top:2px;';
-  slot.appendChild(icon); slot.appendChild(price);
-  slot.onclick=()=>{ if(!isCool) selectSkillWire(); };
-  bar.appendChild(slot);
+  if(wireEquipped){
+    const isCool=wireCoolTick>0;
+    const slot=document.createElement('div');
+    slot.style.cssText=
+      'width:64px;height:64px;background:#222;'+
+      'border:2px solid '+(placingType==='wire'&&!isCool?'#0f0':isCool?'#f44':'#555')+';'+
+      'border-radius:6px;display:flex;flex-direction:column;'+
+      'align-items:center;justify-content:center;'+
+      'cursor:'+(isCool?'default':'pointer')+';'+
+      'position:relative;font-size:11px;color:#ccc;user-select:none;';
+    const badge=document.createElement('span');
+    badge.textContent='R';
+    badge.style.cssText='position:absolute;top:2px;left:4px;font-size:9px;color:#888;';
+    slot.appendChild(badge);
+    const icon=document.createElement('div');
+    icon.textContent='✦'; icon.style.fontSize='22px'; icon.style.color='#aaff44';
+    const price=document.createElement('div');
+    price.textContent='💰'+TOWER_META.wire.cost;
+    price.style.cssText='font-size:10px;color:#FFD700;margin-top:2px;';
+    slot.appendChild(icon); slot.appendChild(price);
+    slot.onclick=()=>{ if(!isCool) selectSkillWire(); };
+    bar.appendChild(slot);
+  }
+  if(wallEquipped){
+    const isCool=wallCoolTick>0;
+    const slot=document.createElement('div');
+    slot.style.cssText=
+      'width:64px;height:64px;background:#222;'+
+      'border:2px solid '+(placingType==='wall'&&!isCool?'#0f0':isCool?'#f44':'#555')+';'+
+      'border-radius:6px;display:flex;flex-direction:column;'+
+      'align-items:center;justify-content:center;'+
+      'cursor:'+(isCool?'default':'pointer')+';'+
+      'position:relative;font-size:11px;color:#ccc;user-select:none;';
+    const badge=document.createElement('span');
+    badge.textContent='R';
+    badge.style.cssText='position:absolute;top:2px;left:4px;font-size:9px;color:#888;';
+    slot.appendChild(badge);
+    const icon=document.createElement('div');
+    icon.textContent='🧱'; icon.style.fontSize='20px';
+    const price=document.createElement('div');
+    price.textContent='💰'+TOWER_META.wall.cost;
+    price.style.cssText='font-size:10px;color:#FFD700;margin-top:2px;';
+    slot.appendChild(icon); slot.appendChild(price);
+    slot.onclick=()=>{ if(!isCool) selectSkillWall(); };
+    bar.appendChild(slot);
+  }
 }
 
 function selectSkillWire(){
@@ -556,6 +590,14 @@ function selectSkillWire(){
   if(wireCoolTick>0) return;
   if(placingType==='wire'){ placingType=null; }
   else{ placingType='wire'; selectedSlot=-1; }
+  renderSkillSlot();
+}
+
+function selectSkillWall(){
+  if(!wallEquipped) return;
+  if(wallCoolTick>0) return;
+  if(placingType==='wall'){ placingType=null; }
+  else{ placingType='wall'; selectedSlot=-1; }
   renderSkillSlot();
 }
 
@@ -569,7 +611,10 @@ function selectSlot(i){
 document.addEventListener('keydown',e=>{
   const n=parseInt(e.key);
   if(n>=1&&n<=MAX_SLOTS) selectSlot(n-1);
-  if(e.key==='r'||e.key==='R') selectSkillWire();
+  if(e.key==='r'||e.key==='R'){
+    if(wireEquipped) selectSkillWire();
+    else if(wallEquipped) selectSkillWall();
+  }
   // 타워 팝업 단축키
   if((e.key==='e'||e.key==='E')&&selectedTower){
     upgradeTower(selectedTower); showTowerPopup(selectedTower);
@@ -585,7 +630,24 @@ document.addEventListener('keydown',e=>{
 
 function equipTower(type){
   if(type==='wire'){
-    wireEquipped=!wireEquipped; renderEquip(); renderSkillSlot(); return;
+    if(wireEquipped){
+      wireEquipped=false;
+      if(placingType==='wire') placingType=null;
+    }else{
+      wireEquipped=true; wallEquipped=false;
+      if(placingType==='wall') placingType=null;
+    }
+    renderEquip(); renderSkillSlot(); return;
+  }
+  if(type==='wall'){
+    if(wallEquipped){
+      wallEquipped=false;
+      if(placingType==='wall') placingType=null;
+    }else{
+      wallEquipped=true; wireEquipped=false;
+      if(placingType==='wire') placingType=null;
+    }
+    renderEquip(); renderSkillSlot(); return;
   }
   if(equipped.length>=MAX_SLOTS||equipped.includes(type)) return;
   equipped.push(type);
@@ -595,6 +657,8 @@ function equipTower(type){
 function renderEquip(){
   const hint=document.getElementById('wireEquipHint');
   if(hint) hint.textContent=wireEquipped?'(장착됨 ✓)':'(미장착 · R키)';
+  const wallHint=document.getElementById('wallEquipHint');
+  if(wallHint) wallHint.textContent=wallEquipped?'(장착됨 ✓)':'(미장착 · R키)';
   const el=document.getElementById('equipList');
   el.innerHTML='';
   equipped.forEach((t,i)=>{
@@ -667,6 +731,7 @@ function renderShop(){
     {type:'puppeteer', price:SHOP_PRICES.puppeteer},
     {type:'lightning', price:SHOP_PRICES.lightning},
     {type:'wire', price:SHOP_PRICES.wire},
+    {type:'wall', price:SHOP_PRICES.wall},
     {type:'marionette', price:null}
   ];
   shopItems
@@ -749,7 +814,7 @@ function renderAchievements(){
 }
 
 function renderInventoryButtons(){
-  const types=['fighter','puppeteer','archer','lightning','wire','marionette'];
+  const types=['fighter','puppeteer','archer','lightning','wire','wall','marionette'];
   types.forEach(t=>{
     const btn=document.getElementById('inv_'+t);
     if(!btn) return;
@@ -810,13 +875,50 @@ class Wire {
   }
 }
 
+class Wall {
+  constructor(x, y){
+    this.x=x; this.y=y;
+    this.hp=1000; this.maxHp=1000;
+    this.destroyed=false;
+    this.radius=12;
+    this.triggered=new Set();
+  }
+  update(){
+    if(this.destroyed) return;
+    for(const e of enemies){
+      if(this.triggered.has(e)) continue;
+      if(Math.hypot(e.x-this.x, e.y-this.y)<this.radius+6){
+        this.triggered.add(e);
+        const eHp=e.hp;
+        e.hp-=this.hp;
+        this.hp-=eHp;
+      }
+    }
+    for(const e of this.triggered){
+      if(e.hp<=0) this.triggered.delete(e);
+    }
+  }
+  draw(){
+    if(this.destroyed) return;
+    ctx.save();
+    ctx.fillStyle='#998877';
+    ctx.fillRect(this.x-10, this.y-10, 20, 20);
+    ctx.strokeStyle='#bbaa99'; ctx.lineWidth=2;
+    ctx.strokeRect(this.x-10, this.y-10, 20, 20);
+    ctx.fillStyle='white'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(Math.floor(this.hp)+'/'+this.maxHp, this.x, this.y-14);
+    ctx.restore();
+  }
+}
+
 class Doll{
   constructor(hp=250, opts={}){
     this.x=path[path.length-1].x; this.y=path[path.length-1].y;
     this.hp=hp; this.maxHp=hp; this.speed=0.8;
     this.dead=false; this.pathIndex=path.length-2;
-    this.damageReduction=opts.damageReduction||0;
+    this.slow=opts.slow||false;
     this.explosive=opts.explosive||false;
+    if(this.slow) this.speed*=0.5;
   }
   update(){
     if(this.dead) return;
@@ -830,7 +932,7 @@ class Doll{
       if(this.dead) return;
       if(Math.hypot(e.x-this.x,e.y-this.y)<12){
         const eHp=e.hp; e.hp-=this.hp;
-        this.hp-=Math.max(0, eHp-this.damageReduction);
+        this.hp-=eHp;
         if(e.hp<=0) e.killedByDoll=true;
         if(this.hp<=0){
           this.dead=true;
@@ -1118,8 +1220,8 @@ class Tower{
     if(this.type==='puppeteer'){
       if(this.cool>0){ this.cool--; return; }
       const lvl=this.upgradeLevel;
-      const dollHp=250+(lvl>=2?100:0);
-      const dollOpts={damageReduction:lvl>=3?10:0, explosive:lvl>=5};
+      const dollHp=250+(lvl>=2?100:0)+(lvl>=3?150:0);
+      const dollOpts={slow:lvl>=3, explosive:lvl>=5};
       dolls.push(new Doll(dollHp, dollOpts)); this.cool=this.coolMax; return;
     }
     if(this.type==='lightning'){
@@ -1187,7 +1289,7 @@ const UPGRADE_LABELS=['','흰','연두','파랑','보라','금'];
 const FIGHTER_UPGRADE_NAMES=['','밝은 눈','긴 팔','주먹은 두개','강철 주먹'];
 const FIGHTER_UPGRADE_DESC=['','은신 적 감지','사거리 +2.5','공격 속도 2배','대미지 +15'];
 const PUPPETEER_UPGRADE_NAMES=['','빠른 제작','질긴 천','철판을 붙인 인형들','더 빠른 제작','솜 대신 폭약'];
-const PUPPETEER_UPGRADE_DESC=['','소환 3초 가속','인형 체력 +100','받는 피해 10 감소','소환 5초 가속','체력 0 시 범위 30에 80 대미지'];
+const PUPPETEER_UPGRADE_DESC=['','소환 3초 가속','인형 체력 +100','인형 이속 저하·최대 체력 +150','소환 5초 가속','체력 0 시 범위 30에 80 대미지'];
 const PUPPETEER_UPGRADE_COSTS=[200,500,600,950,1350];
 function getMaxUpgrade(type){ return type==='puppeteer' ? 5 : 4; }
 function getUpgradeCost(type, level){
@@ -1306,7 +1408,7 @@ function upgradeTower(tower){
     const lvl=tower.upgradeLevel;
     if(lvl===1){ tower.coolMax=Math.max(60,tower.coolMax-180); } // 빠른 제작: 3초 가속
     else if(lvl===2){ /* 질긴 천: 인형 체력+100 (Doll 생성 시 적용) */ }
-    else if(lvl===3){ /* 철판을 붙인 인형들: 받는 피해 10 감소 (Doll 생성 시 적용) */ }
+    else if(lvl===3){ /* 철판을 붙인 인형들: 인형 이속 저하·최대 체력 +150 (Doll 생성 시 적용) */ }
     else if(lvl===4){ tower.coolMax=Math.max(60,tower.coolMax-300); } // 더 빠른 제작: 5초 가속
     else if(lvl===5){ /* 솜 대신 폭약: 폭발 (Doll 생성 시 적용) */ }
   }
@@ -1343,6 +1445,18 @@ canvas.addEventListener('click',e=>{
     return;
   }
 
+  if(placingType==='wall'){
+    if(!isOnPath(x,y)) return;
+    if(isTooCloseToWall(x,y)) return;
+    if(wallCoolTick>0) return;
+    walls.push(new Wall(x,y));
+    gold-=cost;
+    wallCoolTick=WALL_COOLDOWN_FRAMES;
+    placingType=null; selectedSlot=-1;
+    renderSkillSlot();
+    return;
+  }
+
   if(isOnPath(x,y)||isTooCloseToTower(x,y)) return;
   const isHill=hillZones.some(z=>Math.hypot(x-z.x,y-z.y)<z.r);
   if(placingType==='fighter'&&isHill) return;
@@ -1368,8 +1482,9 @@ canvas.addEventListener('click',e=>{
 });
 
 function update(){
-  // 와이어 쿨타임 감소 (준비 시간에는 정지)
+  // 와이어/벽 쿨타임 감소 (준비 시간에는 정지)
   if(wireCoolTick>0 && !preparing) wireCoolTick--;
+  if(wallCoolTick>0 && !preparing) wallCoolTick--;
 
   // 번개 이펙트 수명
   for(let i=lightnings.length-1;i>=0;i--){
@@ -1381,6 +1496,11 @@ function update(){
   wires.forEach(w=>w.update());
   for(let i=wires.length-1;i>=0;i--){
     if(wires[i].destroyed) wires.splice(i,1);
+  }
+  // 벽 업데이트
+  walls.forEach(w=>w.update());
+  for(let i=walls.length-1;i>=0;i--){
+    if(walls[i].destroyed) walls.splice(i,1);
   }
 
   enemies.forEach(e=>e.update());
@@ -1417,7 +1537,7 @@ function update(){
 }
 
 function drawPathBlockPreview(){
-  if(!placingType||placingType==='wire') return;
+  if(!placingType||placingType==='wire'||placingType==='wall') return;
   ctx.save(); ctx.strokeStyle='rgba(255,0,0,0.35)'; ctx.lineWidth=PATH_BLOCK_RADIUS*2;
   ctx.beginPath(); ctx.moveTo(path[0].x,path[0].y);
   for(const p of path) ctx.lineTo(p.x,p.y);
@@ -1425,24 +1545,29 @@ function drawPathBlockPreview(){
 }
 
 function drawWirePlacePreview(){
-  if(placingType!=='wire') return;
+  if(placingType!=='wire' && placingType!=='wall') return;
   ctx.save();
   ctx.strokeStyle='rgba(170,255,68,0.4)'; ctx.lineWidth=PATH_BLOCK_RADIUS*2;
   ctx.beginPath(); ctx.moveTo(path[0].x,path[0].y);
   for(const p of path) ctx.lineTo(p.x,p.y);
   ctx.stroke();
   const onPath=isOnPath(mouseX,mouseY);
-  const tooClose=isTooCloseToWire(mouseX,mouseY);
-  ctx.strokeStyle=(onPath&&!tooClose)?'#aaff44':'red';
+  const tooClose = placingType==='wall' ? isTooCloseToWall(mouseX,mouseY) : isTooCloseToWire(mouseX,mouseY);
+  const ok = onPath && !tooClose;
+  ctx.strokeStyle = ok ? (placingType==='wall' ? '#cca877' : '#aaff44') : 'red';
   ctx.lineWidth=2;
-  ctx.beginPath(); ctx.moveTo(mouseX-8,mouseY-8); ctx.lineTo(mouseX+8,mouseY+8); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(mouseX+8,mouseY-8); ctx.lineTo(mouseX-8,mouseY+8); ctx.stroke();
-  ctx.beginPath(); ctx.arc(mouseX,mouseY,10,0,Math.PI*2); ctx.stroke();
+  if(placingType==='wall'){
+    ctx.strokeRect(mouseX-10, mouseY-10, 20, 20);
+  }else{
+    ctx.beginPath(); ctx.moveTo(mouseX-8,mouseY-8); ctx.lineTo(mouseX+8,mouseY+8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(mouseX+8,mouseY-8); ctx.lineTo(mouseX-8,mouseY+8); ctx.stroke();
+    ctx.beginPath(); ctx.arc(mouseX,mouseY,10,0,Math.PI*2); ctx.stroke();
+  }
   ctx.restore();
 }
 
 function drawTowerBlockPreview(){
-  if(!placingType||placingType==='wire') return;
+  if(!placingType||placingType==='wire'||placingType==='wall') return;
   ctx.save(); ctx.strokeStyle='rgba(255,0,0,0.35)'; ctx.lineWidth=2;
   towers.forEach(t=>{ ctx.beginPath(); ctx.arc(t.x,t.y,TOWER_BLOCK_RADIUS,0,Math.PI*2); ctx.stroke(); });
   ctx.restore();
@@ -1461,6 +1586,7 @@ function draw(){
   ctx.fillStyle='lime';
   ctx.beginPath(); ctx.arc(base.x,base.y,10,0,Math.PI*2); ctx.fill();
   wires.forEach(w=>w.draw());
+  walls.forEach(w=>w.draw());
   enemies.forEach(e=>e.draw());
   towers.forEach(t=>t.draw());
   dolls.forEach(d=>d.draw());
@@ -1471,7 +1597,7 @@ function draw(){
     l.segments.forEach(s=>{ ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(s[2],s[3]); ctx.stroke(); });
   });
   ctx.restore();
-  if(placingType&&placingType!=='wire'){
+  if(placingType&&placingType!=='wire'&&placingType!=='wall'){
     const rangeMap={fighter:50,archer:120,puppeteer:0,lightning:150,marionette:150};
     const range=rangeMap[placingType]||0;
     const blocked=isTooCloseToTower(mouseX,mouseY)||isOnPath(mouseX,mouseY);
