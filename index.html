@@ -240,7 +240,7 @@ const TOWER_META={
   archer:    {label:'🏹', name:'궁수',     cost:150},
   puppeteer: {label:'🎭', name:'인형술사', cost:420},
   lightning:  {label:'⚡', name:'번개 마법사', cost:450},
-  marionette: {label:'🎪', name:'마리오네트', cost:700},
+  marionette: {label:'🎪', name:'마리오네트', cost:3000},
   wire:       {label:'✦', name:'가시 와이어', cost:120},
   wall:       {label:'🧱', name:'벽',         cost:250},
 };
@@ -637,7 +637,7 @@ function equipTower(type){
       wireEquipped=true; wallEquipped=false;
       if(placingType==='wall') placingType=null;
     }
-    renderEquip(); renderSkillSlot(); return;
+    renderEquip(); renderSkillSlot(); renderInventoryButtons(); return;
   }
   if(type==='wall'){
     if(wallEquipped){
@@ -647,11 +647,11 @@ function equipTower(type){
       wallEquipped=true; wireEquipped=false;
       if(placingType==='wire') placingType=null;
     }
-    renderEquip(); renderSkillSlot(); return;
+    renderEquip(); renderSkillSlot(); renderInventoryButtons(); return;
   }
   if(equipped.length>=MAX_SLOTS||equipped.includes(type)) return;
   equipped.push(type);
-  renderEquip(); renderSlotBar();
+  renderEquip(); renderSlotBar(); renderInventoryButtons();
 }
 
 function renderEquip(){
@@ -667,7 +667,7 @@ function renderEquip(){
     div.onclick=()=>{
       equipped.splice(i,1);
       if(placingType===t){ placingType=null; selectedSlot=-1; }
-      renderEquip(); renderSlotBar();
+      renderEquip(); renderSlotBar(); renderInventoryButtons();
     };
     el.appendChild(div);
   });
@@ -820,8 +820,10 @@ function renderInventoryButtons(){
     if(!btn) return;
     const unlocked = persistent.unlocked.includes(t) ||
       (t==='marionette' && !!persistent.achievements['counter_charge']);
+    const isEquipped = equipped.includes(t) || (t==='wire'&&wireEquipped) || (t==='wall'&&wallEquipped);
     btn.disabled=!unlocked;
     btn.style.opacity=unlocked?'1':'0.4';
+    btn.style.border=isEquipped?'2px solid #0f0':'';
   });
 }
 
@@ -1464,18 +1466,9 @@ canvas.addEventListener('click',e=>{
   if(placingType==='puppeteer'&&isHill) return;
   if(placingType==='marionette'&&isHill) return;
   if(placingType==='lightning'&&!isHill) return;
-  if(placingType==='marionette'){
-    // 설치 조건: 현재 설치된 인형술사 5개 이상
-    const puppeteers=towers.filter(t=>t.type==='puppeteer');
-    if(puppeteers.length<5) return;
-    // 인형술사 5개 삭제
-    for(let j=0;j<5;j++){
-      const idx=towers.indexOf(puppeteers[j]);
-      if(idx!==-1) towers.splice(idx,1);
-    }
-  }
-  if(placingType!=='marionette'&&!equipped.includes(placingType)) return;
-  if(placingType==='marionette'&&!equipped.includes(placingType)) return;
+  if(!equipped.includes(placingType)) return;
+  if(placingType==='marionette' && towers.filter(t=>t.type==='marionette').length>=1) return;
+  if(placingType==='puppeteer' && towers.filter(t=>t.type==='puppeteer').length>=3) return;
   towers.push(new Tower(x,y,placingType));
   gold-=cost; placingType=null; selectedSlot=-1;
   renderSlotBar();
