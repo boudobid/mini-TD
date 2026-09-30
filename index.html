@@ -242,7 +242,7 @@ const TOWER_META={
   lightning:  {label:'⚡', name:'번개 마법사', cost:450},
   marionette: {label:'🎪', name:'마리오네트', cost:3000},
   wire:       {label:'✦', name:'가시 와이어', cost:120},
-  wall:       {label:'🧱', name:'벽',         cost:250},
+  wall:       {label:'🧱', name:'벽',         cost:500},
 };
 
 // 영구 저장 (상점 재화, 해금, 업적)
@@ -649,7 +649,14 @@ function equipTower(type){
     }
     renderEquip(); renderSkillSlot(); renderInventoryButtons(); return;
   }
-  if(equipped.length>=MAX_SLOTS||equipped.includes(type)) return;
+  const idx=equipped.indexOf(type);
+  if(idx!==-1){
+    equipped.splice(idx,1);
+    if(placingType===type){ placingType=null; selectedSlot=-1; }
+    renderEquip(); renderSlotBar(); renderInventoryButtons();
+    return;
+  }
+  if(equipped.length>=MAX_SLOTS) return;
   equipped.push(type);
   renderEquip(); renderSlotBar(); renderInventoryButtons();
 }
@@ -880,7 +887,7 @@ class Wire {
 class Wall {
   constructor(x, y){
     this.x=x; this.y=y;
-    this.hp=1000; this.maxHp=1000;
+    this.hp=750; this.maxHp=750;
     this.destroyed=false;
     this.radius=12;
     this.triggered=new Set();
@@ -899,6 +906,7 @@ class Wall {
     for(const e of this.triggered){
       if(e.hp<=0) this.triggered.delete(e);
     }
+    if(this.hp<=0) this.destroyed=true;
   }
   draw(){
     if(this.destroyed) return;
@@ -967,7 +975,7 @@ class Enemy{
     if(type==='knight'){   this.hp=200; this.maxHp=200; this.baseSpeed=0.6; this.color='blue'; }
     if(type==='cavalry'){  this.hp=300; this.maxHp=300; this.baseSpeed=1.5; this.color='#8B4513'; }
     if(type==='ninja'){    this.hp=100; this.maxHp=100; this.baseSpeed=2.3; this.color='purple'; this.hidden=true; }
-    if(type==='golem'){    this.hp=500; this.maxHp=500; this.baseSpeed=0.4; this.color='gray';   this.isBoss=(wave===10||wave===25); }
+    if(type==='golem'){    this.hp=500; this.maxHp=500; this.baseSpeed=0.4; this.color='gray';   this.isBoss=(wave===10); }
     if(type==='miniGolem'){this.hp=250; this.maxHp=250; this.baseSpeed=1;   this.color='lightgray'; }
     if(type==='darkMage'){ this.hp=800; this.maxHp=800; this.baseSpeed=0.5; this.color='#660066'; this.isBoss=(wave===20); this.summonTick=0; this.phase2=false; }
     if(type==='ghost'){    this.hp=50;  this.maxHp=50;  this.baseSpeed=1.2; this.color='#aaaaff'; this.hidden=true; }
@@ -1069,7 +1077,7 @@ class Enemy{
 function getEnemyInfo(e){
   if(e.type==='cavalry')   return '승마';
   if(e.type==='ninja')     return '은신';
-  if(e.type==='golem')     return '보스/분열';
+  if(e.type==='golem')     return e.isBoss ? '보스/분열' : '분열';
   if(e.type==='miniGolem') return '조각';
   if(e.type==='darkMage')  return '흑마술사';
   if(e.type==='ghost')     return '은신';
@@ -1451,6 +1459,7 @@ canvas.addEventListener('click',e=>{
     if(!isOnPath(x,y)) return;
     if(isTooCloseToWall(x,y)) return;
     if(wallCoolTick>0) return;
+    if(walls.length>0) walls.length=0;
     walls.push(new Wall(x,y));
     gold-=cost;
     wallCoolTick=WALL_COOLDOWN_FRAMES;
