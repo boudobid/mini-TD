@@ -42,7 +42,7 @@
     <div style="margin-bottom:10px;font-size:16px;">⚔ 난이도 선택</div>
     <div style="display:flex;gap:12px;justify-content:center;">
       <button onclick="startGame('easy')" style="padding:14px 22px;font-size:15px;background:#1a3d1a;border:2px solid #4a4;color:#fff;border-radius:6px;cursor:pointer;">쉬움<br><small style="color:#9c9;">25 웨이브</small></button>
-      <button disabled style="padding:14px 22px;font-size:15px;background:#333;border:2px solid #555;color:#888;border-radius:6px;cursor:not-allowed;opacity:0.6;">보통<br><small style="color:#777;">준비 중</small></button>
+      <button onclick="startGame('normal')" style="padding:14px 22px;font-size:15px;background:#1a3d1a;border:2px solid #4a4;color:#fff;border-radius:6px;cursor:pointer;">보통<br><small style="color:#9c9;">35 웨이브</small></button>
       <button disabled style="padding:14px 22px;font-size:15px;background:#333;border:2px solid #555;color:#888;border-radius:6px;cursor:not-allowed;opacity:0.6;">어려움<br><small style="color:#777;">준비 중</small></button>
       <button disabled style="padding:14px 22px;font-size:15px;background:#333;border:2px solid #555;color:#888;border-radius:6px;cursor:not-allowed;opacity:0.6;">무한<br><small style="color:#777;">준비 중</small></button>
     </div>
@@ -57,7 +57,9 @@
     <div style="margin-top:10px;color:#FFD700;font-size:15px;"><span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:radial-gradient(#ffe066,#daa520);border:1px solid #b8860b;vertical-align:-1px;"></span> 보유 코인: <span id="persistentGoldDisplay">0</span></div>
   <div id="codexUI" style="display:none;margin-top:15px;background:#222;padding:14px;border:1px solid #555;border-radius:6px;max-width:420px;text-align:left;">
     <h4 style="margin:0 0 10px;text-align:center;">📖 적 도감</h4>
+    <div id="codexCatTabs" style="display:flex;gap:6px;justify-content:center;margin-bottom:8px;flex-wrap:wrap;"></div>
     <div class="noscroll" style="max-height:260px;overflow-y:auto;padding-right:4px;">
+    <div id="codexCat_쉬움">
     <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:red;display:inline-block;border-radius:2px;"></span><b>방랑자</b> <small style="color:#aaa;">체력 50</small></div>
     <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:orange;display:inline-block;border-radius:2px;"></span><b>도둑</b> <small style="color:#aaa;">체력 25</small></div>
     <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:blue;display:inline-block;border-radius:2px;"></span><b>기사</b> <small style="color:#aaa;">체력 200</small></div>
@@ -68,6 +70,14 @@
     <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#660066;display:inline-block;border-radius:2px;"></span><b>흑마술사</b> <small style="color:#aaa;">체력 800 · 특성: 보스/소환(유령)·반 이하 은신</small></div>
     <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#aaaaff;display:inline-block;border-radius:2px;"></span><b>유령</b> <small style="color:#aaa;">체력 50 · 특성: 은신</small></div>
     <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:silver;display:inline-block;border-radius:2px;outline:1px solid gold;"></span><b>기사단장</b> <small style="color:#aaa;">체력 1200 · 특성: 보스/소환(기마병·기사)</small></div>
+    </div>
+    <div id="codexCat_보통">
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#cc4422;display:inline-block;border-radius:2px;"></span><b>용병</b> <small style="color:#aaa;">체력 75</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#cc8822;display:inline-block;border-radius:2px;"></span><b>제국 민병대</b> <small style="color:#aaa;">체력 38</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#2244aa;display:inline-block;border-radius:2px;"></span><b>제국 기사</b> <small style="color:#aaa;">체력 300</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#663388;display:inline-block;border-radius:2px;"></span><b>엘리트 용병</b> <small style="color:#aaa;">체력 225 · 특성: 은신</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#555566;display:inline-block;border-radius:2px;outline:1px solid gold;"></span><b>제국 부르트 기사</b> <small style="color:#aaa;">체력 750 · 특성: 보스</small></div>
+    </div>
     </div>
   </div>
   <div id="inventoryUI" style="display:none;margin-top:15px;background:#222;padding:10px;border:1px solid #555;border-radius:6px;max-width:420px;text-align:left;">
@@ -81,6 +91,7 @@
     <h4 style="font-size:13px;">🟩 지상 설치</h4>
     <button id="inv_fighter" onclick="equipTower('fighter')">🗡 파이터</button>
     <button id="inv_puppeteer" onclick="equipTower('puppeteer')">🎭 인형술사</button>
+    <button id="inv_merchant" onclick="equipTower('merchant')">💰 상인</button>
     </div>
     <div id="invCat_언덕">
     <h4 style="font-size:13px;">🟨 언덕 설치</h4>
@@ -211,10 +222,10 @@ let wallEquipped = false;
 const equipped=[], towers=[], enemies=[], dolls=[], wires=[], walls=[], lightnings=[];
 const PATH_BLOCK_RADIUS=15, TOWER_BLOCK_RADIUS=20, MAX_SLOTS=6;
 let selectedSlot=-1;
-let achCat='all'; // 업적 카테고리 필터: 'all' | '일반' | '챌린지'
+let achCat='all'; let codexCat='all';
 let shopCat='all', invCat='all'; // 상점/인벤토리 카테고리 필터
 const TOWER_CATEGORY={
-  fighter:'지상', puppeteer:'지상',
+  fighter:'지상', puppeteer:'지상', merchant:'지상',
   archer:'언덕', lightning:'언덕',
   wire:'특수',
   wall:'특수',
@@ -241,12 +252,13 @@ const TOWER_META={
   puppeteer: {label:'🎭', name:'인형술사', cost:420},
   lightning:  {label:'⚡', name:'번개 마법사', cost:450},
   marionette: {label:'🎪', name:'마리오네트', cost:3000},
+  merchant:   {label:'💰', name:'상인',       cost:350},
   wire:       {label:'✦', name:'가시 와이어', cost:120},
   wall:       {label:'🧱', name:'벽',         cost:500},
 };
 
 // 영구 저장 (상점 재화, 해금, 업적)
-const VALID_UNLOCKABLE=['fighter','archer','puppeteer','lightning','wire','wall'];
+const VALID_UNLOCKABLE=['fighter','archer','puppeteer','lightning','wire','wall','merchant'];
 const VALID_ACH_KEYS=['first_lose','first_win','counter_charge'];
 const MAX_GOLD=100000; // 합리적 상한 (치트 의심값 차단)
 function sanitizePersistent(raw){
@@ -307,7 +319,7 @@ function unlockAchievement(key){
   return true;
 }
 
-const SHOP_PRICES={ puppeteer:500, lightning:550, wire:200, wall:350 };
+const SHOP_PRICES={ puppeteer:500, lightning:550, wire:200, wall:350, merchant:400 };
 const ACHIEVEMENTS={
   first_lose:{ name:'첫 상처', desc:'첫 패배 경험 (+50 코인)', cat:'일반' },
   first_win:{ name:'첫 승리', desc:'첫 게임 클리어 (+50 코인)', cat:'일반' },
@@ -364,6 +376,18 @@ function isTooCloseToWire(x,y){
 
 function isTooCloseToWall(x,y){
   return walls.some(w=>Math.hypot(w.x-x,w.y-y)<TOWER_BLOCK_RADIUS);
+}
+
+function isTowerInAttackRect(t,ax,ay,bx,by,halfWidth){
+  const dx=bx-ax, dy=by-ay;
+  const len=Math.hypot(dx,dy);
+  if(len===0) return false;
+  const ux=dx/len, uy=dy/len;
+  const px=-uy, py=ux;
+  const tx=t.x-ax, ty=t.y-ay;
+  const projLen=tx*ux+ty*uy;
+  const projPerp=tx*px+ty*py;
+  return projLen>=0 && projLen<=len && Math.abs(projPerp)<=halfWidth;
 }
 
 function updateTowerCountUI(){
@@ -699,10 +723,28 @@ function toggleInventory(){
   if(!isOpen){ openPanel('inventoryUI'); renderInventoryButtons(); renderInvTabs(); }
 }
 
+const CODEX_TABS=[['all','전체'],['쉬움','🟢 쉬움'],['보통','🟡 보통']];
+function renderCodexTabs(){
+  const tabs=document.getElementById('codexCatTabs');
+  if(!tabs) return;
+  tabs.innerHTML='';
+  CODEX_TABS.forEach(([key,label])=>{
+    const b=document.createElement('button');
+    const active=codexCat===key;
+    b.textContent=label;
+    b.style.cssText='padding:5px 10px;font-size:12px;cursor:pointer;border-radius:4px;border:1px solid '+(active?'#FFD700':'#555')+';background:'+(active?'#332b00':'#1a1a1a')+';color:'+(active?'#FFD700':'#ccc')+';';
+    b.onclick=()=>{ codexCat=key; renderCodexTabs(); };
+    tabs.appendChild(b);
+  });
+  ['쉬움','보통'].forEach(cat=>{
+    const el=document.getElementById('codexCat_'+cat);
+    if(el) el.style.display=(codexCat==='all'||codexCat===cat)?'block':'none';
+  });
+}
 function toggleCodex(){
   const isOpen=document.getElementById('codexUI').style.display==='block';
   closeAllPanels(isOpen?null:'codexUI');
-  if(!isOpen) openPanel('codexUI');
+  if(!isOpen){ openPanel('codexUI'); renderCodexTabs(); }
 }
 
 function toggleWireInfo(){
@@ -737,6 +779,7 @@ function renderShop(){
   const shopItems=[
     {type:'puppeteer', price:SHOP_PRICES.puppeteer},
     {type:'lightning', price:SHOP_PRICES.lightning},
+    {type:'merchant', price:SHOP_PRICES.merchant},
     {type:'wire', price:SHOP_PRICES.wire},
     {type:'wall', price:SHOP_PRICES.wall},
     {type:'marionette', price:null}
@@ -821,7 +864,7 @@ function renderAchievements(){
 }
 
 function renderInventoryButtons(){
-  const types=['fighter','puppeteer','archer','lightning','wire','wall','marionette'];
+  const types=['fighter','puppeteer','merchant','archer','lightning','wire','wall','marionette'];
   types.forEach(t=>{
     const btn=document.getElementById('inv_'+t);
     if(!btn) return;
@@ -973,13 +1016,19 @@ class Enemy{
     if(type==='wanderer'){ this.hp=50;  this.maxHp=50;  this.baseSpeed=1;   this.color='red'; }
     if(type==='thief'){    this.hp=25;  this.maxHp=25;  this.baseSpeed=2;   this.color='orange'; }
     if(type==='knight'){   this.hp=200; this.maxHp=200; this.baseSpeed=0.6; this.color='blue'; }
-    if(type==='cavalry'){  this.hp=300; this.maxHp=300; this.baseSpeed=1.5; this.color='#8B4513'; }
-    if(type==='ninja'){    this.hp=100; this.maxHp=100; this.baseSpeed=2.3; this.color='purple'; this.hidden=true; }
+    if(type==='cavalry'){  this.hp=400; this.maxHp=400; this.baseSpeed=1.5; this.color='#8B4513'; }
+    if(type==='ninja'){    this.hp=150; this.maxHp=150; this.baseSpeed=2.3; this.color='purple'; this.hidden=true; }
     if(type==='golem'){    this.hp=500; this.maxHp=500; this.baseSpeed=0.4; this.color='gray';   this.isBoss=(wave===10); }
     if(type==='miniGolem'){this.hp=250; this.maxHp=250; this.baseSpeed=1;   this.color='lightgray'; }
-    if(type==='darkMage'){ this.hp=800; this.maxHp=800; this.baseSpeed=0.5; this.color='#660066'; this.isBoss=(wave===20); this.summonTick=0; this.phase2=false; }
-    if(type==='ghost'){    this.hp=50;  this.maxHp=50;  this.baseSpeed=1.2; this.color='#aaaaff'; this.hidden=true; }
-    if(type==='knightLord'){ this.hp=1200; this.maxHp=1200; this.baseSpeed=0.6; this.color='silver'; this.isBoss=(wave===25); this.summonCavalryTick=0; this.summonKnightTick=0; this.ragePhase=false; }
+    if(type==='darkMage'){ this.hp=8000; this.maxHp=8000; this.baseSpeed=0.5; this.color='#660066'; this.isBoss=(wave===20); this.summonTick=0; this.phase2=false; }
+    if(type==='ghost'){    this.hp=500;  this.maxHp=500;  this.baseSpeed=1.2; this.color='#aaaaff'; this.hidden=true; }
+    if(type==='knightLord'){ this.hp=20000; this.maxHp=20000; this.baseSpeed=0.6; this.color='silver'; this.isBoss=(wave===25); this.summonCavalryTick=0; this.summonKnightTick=0; this.ragePhase=false; }
+    if(type==='mercenary'){ this.hp=75; this.maxHp=75; this.baseSpeed=1; this.color='#cc4422'; }
+    if(type==='militia'){ this.hp=38; this.maxHp=38; this.baseSpeed=2; this.color='#cc8822'; }
+    if(type==='impKnight'){ this.hp=300; this.maxHp=300; this.baseSpeed=0.6; this.color='#2244aa'; }
+    if(type==='eliteMerc'){ this.hp=225; this.maxHp=225; this.baseSpeed=2.3; this.color='#663388'; this.hidden=true; }
+    if(type==='bruteKnight'){ this.hp=750; this.maxHp=750; this.baseSpeed=0.4; this.color='#555566'; this.isBoss=(wave===12 && gameDifficulty==='normal'); this.attackCool=0; this.attackTick=0; this.attackRect=null; }
+    if(gameDifficulty==='normal') this.baseSpeed*=1.2;
     this.speed=this.baseSpeed;
   }
   update(){
@@ -995,7 +1044,7 @@ class Enemy{
     // 흑마술사: 10초(600틱)마다 유령 4마리 소환
     if(this.type==='darkMage' && !this.stunTick){
       this.summonTick++;
-      if(this.summonTick>=600){
+      if(this.summonTick>=300){
         this.summonTick=0;
         for(let g=0;g<4;g++){
           const ghost=new Enemy('ghost');
@@ -1008,7 +1057,7 @@ class Enemy{
     if(this.type==='knightLord' && !this.stunTick){
       this.summonCavalryTick++;
       this.summonKnightTick++;
-      if(this.summonCavalryTick>=600){
+      if(this.summonCavalryTick>=300){
         this.summonCavalryTick=0;
         for(let c=0;c<2;c++){
           const cav=new Enemy('cavalry');
@@ -1016,12 +1065,28 @@ class Enemy{
           enemies.push(cav);
         }
       }
-      if(this.summonKnightTick>=300){
+      if(this.summonKnightTick>=150){
         this.summonKnightTick=0;
         for(let k=0;k<4;k++){
           const kn=new Enemy('knight');
           kn.x=this.x; kn.y=this.y; kn.i=this.i;
           enemies.push(kn);
+        }
+      }
+    }
+    // 제국 부르트 기사: 가장 가까운 타워를 향해 직사각형 공격, 피격 타워 3초 기절
+    if(this.type==='bruteKnight' && !this.stunTick){
+      if(this.attackCool>0) this.attackCool--;
+      if(this.attackTick>0){ this.attackTick--; if(this.attackTick<=0) this.attackRect=null; }
+      if(this.attackCool<=0 && this.attackTick<=0){
+        let nearest=null, minDist=Infinity;
+        towers.forEach(t=>{ const d=Math.hypot(t.x-this.x,t.y-this.y); if(d<minDist){ minDist=d; nearest=t; } });
+        if(nearest && minDist<250){
+          this.attackTick=30; this.attackCool=300;
+          this.attackRect={tx:nearest.x,ty:nearest.y};
+          towers.forEach(t=>{
+            if(isTowerInAttackRect(t,this.x,this.y,nearest.x,nearest.y,25)) t.stunTick=180;
+          });
         }
       }
     }
@@ -1066,6 +1131,21 @@ class Enemy{
       ctx.beginPath(); ctx.arc(this.x,this.y,11,0,Math.PI*2); ctx.stroke();
       ctx.restore();
     }
+    if(this.attackRect && this.attackTick>0){
+      ctx.save();
+      const dx=this.attackRect.tx-this.x, dy=this.attackRect.ty-this.y;
+      const len=Math.hypot(dx,dy);
+      const angle=Math.atan2(dy,dx);
+      const alpha=0.4*(this.attackTick/30);
+      ctx.translate(this.x,this.y);
+      ctx.rotate(angle);
+      ctx.fillStyle='rgba(255,80,80,'+alpha+')';
+      ctx.fillRect(0,-25,len,50);
+      ctx.strokeStyle='rgba(255,40,40,'+(alpha*1.5)+')';
+      ctx.lineWidth=2;
+      ctx.strokeRect(0,-25,len,50);
+      ctx.restore();
+    }
     ctx.textAlign='center';
     ctx.fillStyle='#aaa'; ctx.font='9px sans-serif';
     ctx.fillText(getEnemyInfo(this),this.x,this.y-25);
@@ -1079,9 +1159,10 @@ function getEnemyInfo(e){
   if(e.type==='ninja')     return '은신';
   if(e.type==='golem')     return e.isBoss ? '보스/분열' : '분열';
   if(e.type==='miniGolem') return '조각';
-  if(e.type==='darkMage')  return '흑마술사';
+  if(e.type==='darkMage')  return '보스/소환/은신';
   if(e.type==='ghost')     return '은신';
   if(e.type==='knightLord') return '보스/소환';
+  if(e.type==='bruteKnight') return e.isBoss ? '보스' : '';
   return '';
 }
 
@@ -1093,6 +1174,46 @@ function buildWaveQueue(){
     if(wave===1) for(let i=0;i<5;i++) waveQueue.push('wanderer');
     else if(wave===2) for(let i=0;i<5;i++) waveQueue.push('ninja');
     else if(wave===3) waveQueue.push('golem');
+    spawnLimit=waveQueue.length;
+    return;
+  }
+  if(gameDifficulty==='normal'){
+    const w=wave;
+    if(w===1)  for(let i=0;i<8;i++)  waveQueue.push('mercenary');
+    else if(w===2)  for(let i=0;i<12;i++) waveQueue.push('mercenary');
+    else if(w===3)  for(let i=0;i<8;i++)  waveQueue.push('militia');
+    else if(w===4)  for(let i=0;i<12;i++) waveQueue.push('militia');
+    else if(w===5)  for(let i=0;i<4;i++)  waveQueue.push('impKnight');
+    else if(w===6){ for(let i=0;i<6;i++) waveQueue.push('impKnight'); for(let i=0;i<4;i++) waveQueue.push('militia'); }
+    else if(w===7){ for(let i=0;i<8;i++) waveQueue.push('mercenary'); for(let i=0;i<8;i++) waveQueue.push('militia'); for(let i=0;i<8;i++) waveQueue.push('impKnight'); }
+    else if(w===8){ for(let i=0;i<15;i++) waveQueue.push('mercenary'); for(let i=0;i<15;i++) waveQueue.push('militia'); for(let i=0;i<15;i++) waveQueue.push('impKnight'); }
+    else if(w===9)  for(let i=0;i<10;i++) waveQueue.push('eliteMerc');
+    else if(w===10){ for(let i=0;i<10;i++) waveQueue.push('eliteMerc'); for(let i=0;i<5;i++) waveQueue.push('impKnight'); }
+    else if(w===11){ for(let i=0;i<15;i++) waveQueue.push('mercenary'); for(let i=0;i<10;i++) waveQueue.push('militia'); for(let i=0;i<5;i++) waveQueue.push('eliteMerc'); for(let i=0;i<5;i++) waveQueue.push('impKnight'); }
+    else if(w===12) waveQueue.push('bruteKnight');
+    else if(w===13){ for(let i=0;i<15;i++) waveQueue.push('mercenary'); for(let i=0;i<10;i++) waveQueue.push('militia'); for(let i=0;i<5;i++) waveQueue.push('impKnight'); for(let i=0;i<2;i++) waveQueue.push('bruteKnight'); }
+    else if(w===14){ for(let i=0;i<15;i++) waveQueue.push('eliteMerc'); for(let i=0;i<10;i++) waveQueue.push('impKnight'); for(let i=0;i<2;i++) waveQueue.push('bruteKnight'); }
+    else if(w===15){ for(let i=0;i<20;i++) waveQueue.push('militia'); for(let i=0;i<15;i++) waveQueue.push('eliteMerc'); for(let i=0;i<3;i++) waveQueue.push('bruteKnight'); }
+    else if(w===16){ for(let i=0;i<20;i++) waveQueue.push('impKnight'); for(let i=0;i<3;i++) waveQueue.push('bruteKnight'); }
+    else if(w===17){ for(let i=0;i<25;i++) waveQueue.push('eliteMerc'); for(let i=0;i<10;i++) waveQueue.push('militia'); }
+    else if(w===18){ for(let i=0;i<15;i++) waveQueue.push('impKnight'); for(let i=0;i<5;i++) waveQueue.push('bruteKnight'); }
+    else if(w===19){ for(let i=0;i<20;i++) waveQueue.push('impKnight'); for(let i=0;i<20;i++) waveQueue.push('eliteMerc'); for(let i=0;i<10;i++) waveQueue.push('militia'); }
+    else if(w===20){ for(let i=0;i<5;i++) waveQueue.push('bruteKnight'); for(let i=0;i<20;i++) waveQueue.push('eliteMerc'); for(let i=0;i<10;i++) waveQueue.push('impKnight'); }
+    else if(w===21){ for(let i=0;i<25;i++) waveQueue.push('impKnight'); for(let i=0;i<5;i++) waveQueue.push('bruteKnight'); }
+    else if(w===22){ for(let i=0;i<30;i++) waveQueue.push('eliteMerc'); for(let i=0;i<15;i++) waveQueue.push('impKnight'); for(let i=0;i<5;i++) waveQueue.push('bruteKnight'); }
+    else if(w===23){ for(let i=0;i<20;i++) waveQueue.push('militia'); for(let i=0;i<20;i++) waveQueue.push('eliteMerc'); for(let i=0;i<5;i++) waveQueue.push('bruteKnight'); }
+    else if(w===24){ for(let i=0;i<30;i++) waveQueue.push('impKnight'); for(let i=0;i<20;i++) waveQueue.push('eliteMerc'); for(let i=0;i<30;i++) waveQueue.push('militia'); }
+    else if(w===25){ for(let i=0;i<8;i++) waveQueue.push('bruteKnight'); for(let i=0;i<15;i++) waveQueue.push('impKnight'); for(let i=0;i<20;i++) waveQueue.push('eliteMerc'); }
+    else if(w===26){ for(let i=0;i<30;i++) waveQueue.push('mercenary'); for(let i=0;i<20;i++) waveQueue.push('impKnight'); for(let i=0;i<5;i++) waveQueue.push('bruteKnight'); }
+    else if(w===27){ for(let i=0;i<30;i++) waveQueue.push('eliteMerc'); for(let i=0;i<8;i++) waveQueue.push('bruteKnight'); }
+    else if(w===28){ for(let i=0;i<30;i++) waveQueue.push('impKnight'); for(let i=0;i<8;i++) waveQueue.push('bruteKnight'); }
+    else if(w===29){ for(let i=0;i<30;i++) waveQueue.push('militia'); for(let i=0;i<25;i++) waveQueue.push('eliteMerc'); for(let i=0;i<5;i++) waveQueue.push('bruteKnight'); }
+    else if(w===30){ for(let i=0;i<10;i++) waveQueue.push('bruteKnight'); for(let i=0;i<20;i++) waveQueue.push('impKnight'); for(let i=0;i<20;i++) waveQueue.push('eliteMerc'); }
+    else if(w===31){ for(let i=0;i<40;i++) waveQueue.push('impKnight'); for(let i=0;i<10;i++) waveQueue.push('bruteKnight'); }
+    else if(w===32){ for(let i=0;i<40;i++) waveQueue.push('eliteMerc'); for(let i=0;i<10;i++) waveQueue.push('bruteKnight'); }
+    else if(w===33){ for(let i=0;i<40;i++) waveQueue.push('militia'); for(let i=0;i<20;i++) waveQueue.push('impKnight'); for(let i=0;i<10;i++) waveQueue.push('bruteKnight'); }
+    else if(w===34){ for(let i=0;i<40;i++) waveQueue.push('impKnight'); for(let i=0;i<30;i++) waveQueue.push('eliteMerc'); for(let i=0;i<10;i++) waveQueue.push('bruteKnight'); }
+    else if(w===35){ for(let i=0;i<15;i++) waveQueue.push('bruteKnight'); for(let i=0;i<30;i++) waveQueue.push('impKnight'); for(let i=0;i<30;i++) waveQueue.push('eliteMerc'); for(let i=0;i<30;i++) waveQueue.push('militia'); }
     spawnLimit=waveQueue.length;
     return;
   }
@@ -1154,8 +1275,14 @@ function readyWave(){
       waveStarted=true; preparing=false;
       waveElapsedTick=0;
       btn.style.display='none';
+      payoutMerchants();
     }
   },1000);
+}
+
+function payoutMerchants(){
+  const count=towers.filter(t=>t.type==='merchant').length;
+  if(count>0) gold+=count*100;
 }
 
 function nextWave(){
@@ -1165,23 +1292,27 @@ function nextWave(){
       return;
     }
     wave++; spawnCount=0; spawnTick=0; timeTick=0; waveElapsedTick=0;
-    buildWaveQueue(); waveStarted=true;
+    buildWaveQueue(); waveStarted=true; payoutMerchants();
     return;
   }
-  if(wave>=25){
+  const maxWave = gameDifficulty==='normal' ? 35 : 25;
+  if(wave>=maxWave){
     if(spawnCount>=spawnLimit&&enemies.length===0) showOverlay('clear');
     return;
   }
-  wave++; timeLeft=(wave===10||wave===20||wave===25)?120:60;
+  wave++;
+  const bossWaves = gameDifficulty==='normal' ? [12] : [10,20,25];
+  timeLeft = bossWaves.includes(wave) ? 120 : 60;
   spawnCount=0; spawnTick=0; timeTick=0; waveElapsedTick=0;
-  buildWaveQueue(); waveStarted=true;
+  buildWaveQueue(); waveStarted=true; payoutMerchants();
 }
 
 function canSkip(){
   if(!waveStarted) return false;
-  const isLast = isTutorial ? wave>=3 : wave>=25;
+  const isLast = isTutorial ? wave>=3 : wave>=(gameDifficulty==='normal'?35:25);
   if(isLast) return false;
-  const threshold=(wave===10||wave===20||wave===25)?2400:1500;
+  const bossWaves = gameDifficulty==='normal' ? [12] : [10,20,25];
+  const threshold = bossWaves.includes(wave) ? 2400 : 1500;
   return waveElapsedTick>=threshold;
 }
 function skipWave(){
@@ -1191,22 +1322,24 @@ function skipWave(){
   if(isTutorial){
     wave++;
     spawnCount=0; spawnTick=0; timeTick=0; waveElapsedTick=0;
-    buildWaveQueue(); waveStarted=true;
+    buildWaveQueue(); waveStarted=true; payoutMerchants();
     return;
   }
   wave++;
-  timeLeft=(wave===10||wave===20||wave===25)?120:60;
+  const bossWaves = gameDifficulty==='normal' ? [12] : [10,20,25];
+  timeLeft = bossWaves.includes(wave) ? 120 : 60;
   spawnCount=0; spawnTick=0; timeTick=0; waveElapsedTick=0;
-  buildWaveQueue(); waveStarted=true;
+  buildWaveQueue(); waveStarted=true; payoutMerchants();
 }
 function updateSkipUI(){
   const skipBtn=document.getElementById('skipBtn');
   const skipTimer=document.getElementById('skipTimer');
   if(!skipBtn) return;
-  const isLast = isTutorial ? wave>=3 : wave>=25;
+  const isLast = isTutorial ? wave>=3 : wave>=(gameDifficulty==='normal'?35:25);
   if(waveStarted && !isLast){
     skipBtn.style.display='inline-block';
-    const threshold=(wave===10||wave===20||wave===25)?2400:1500;
+    const bossWaves = gameDifficulty==='normal' ? [12] : [10,20,25];
+    const threshold = bossWaves.includes(wave) ? 2400 : 1500;
     const left=threshold-waveElapsedTick;
     if(left<=0){ skipBtn.disabled=false; skipTimer.textContent=''; }
     else { skipBtn.disabled=true; skipTimer.textContent=' ('+Math.ceil(left/60)+'s)'; }
@@ -1218,15 +1351,18 @@ function updateSkipUI(){
 class Tower{
   constructor(x,y,type){
     this.x=x; this.y=y; this.type=type;
-    if(type==='fighter'){   this.range=50;  this.damage=25;  this.coolMax=20;  }
+    if(type==='fighter'){   this.range=50;  this.damage=25;  this.coolMax=30;  }
     if(type==='archer'){    this.range=120; this.damage=50;  this.coolMax=50;  }
     if(type==='puppeteer'){   this.range=0;   this.damage=0;   this.coolMax=1200; }
     if(type==='lightning'){   this.range=150; this.damage=50;  this.coolMax=240; }
     if(type==='marionette'){  this.range=150; this.damage=50;  this.coolMax=120; }
+    if(type==='merchant'){   this.range=0;   this.damage=0;   this.coolMax=0; }
     this.baseRange=this.range; this.cool=0; this.summonCool=0;
-    this.upgradeLevel=0; // 강화 단계 (0~5)
+    this.upgradeLevel=0; this.stunTick=0;
   }
   update(){
+    if(this.stunTick>0){ this.stunTick--; return; }
+    if(this.type==='merchant') return;
     if(this.type==='puppeteer'){
       if(this.cool>0){ this.cool--; return; }
       const lvl=this.upgradeLevel;
@@ -1280,6 +1416,7 @@ class Tower{
       this.type==='archer'?'yellow':
       this.type==='lightning'?'#66ccff':
       this.type==='marionette'?'#ff44aa':
+      this.type==='merchant'?'#FFD700':
       this.type==='puppeteer'?'#cc88ff':'pink';
     ctx.beginPath(); ctx.arc(this.x,this.y,10,0,Math.PI*2); ctx.fill();
     if(this.upgradeLevel>0){
@@ -1290,6 +1427,12 @@ class Tower{
     if(selectedTower===this&&this.range>0){
       ctx.strokeStyle='white';
       ctx.beginPath(); ctx.arc(this.x,this.y,this.range,0,Math.PI*2); ctx.stroke();
+    }
+    if(this.stunTick>0){
+      ctx.save();
+      ctx.strokeStyle='#ffcc00'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(this.x,this.y,14,0,Math.PI*2); ctx.stroke();
+      ctx.restore();
     }
   }
 }
@@ -1320,6 +1463,8 @@ function getTowerStats(tower){
     atkSpeed=(60/tower.coolMax).toFixed(2)+'/s';
   }else if(tower.type==='puppeteer'||tower.type==='marionette'){
     atkSpeed='소환형';
+  }else if(tower.type==='merchant'){
+    atkSpeed='수익형';
   }
   const dmg = tower.damage>0 ? tower.damage : '—';
   const range = tower.range>0 ? tower.range : '—';
@@ -1350,7 +1495,8 @@ function showTowerPopup(tower){
   statsEl.innerHTML=
     '사거리: <b>'+s.range+'</b><br>'+
     '공격속도: <b>'+s.atkSpeed+'</b><br>'+
-    '대미지: <b>'+s.dmg+'</b>';
+    '대미지: <b>'+s.dmg+'</b>'+
+    (tower.type==='merchant' ? '<br>수익: <b style="color:#FFD700;">웨이브당 +100골드</b>' : '');
   // 강화 정보
   const upgradable=['fighter','archer','puppeteer'];
   const maxUp=getMaxUpgrade(tower.type);
@@ -1474,10 +1620,12 @@ canvas.addEventListener('click',e=>{
   if(placingType==='archer'&&!isHill) return;
   if(placingType==='puppeteer'&&isHill) return;
   if(placingType==='marionette'&&isHill) return;
+  if(placingType==='merchant'&&isHill) return;
   if(placingType==='lightning'&&!isHill) return;
   if(!equipped.includes(placingType)) return;
   if(placingType==='marionette' && towers.filter(t=>t.type==='marionette').length>=1) return;
   if(placingType==='puppeteer' && towers.filter(t=>t.type==='puppeteer').length>=3) return;
+  if(placingType==='merchant' && towers.filter(t=>t.type==='merchant').length>=3) return;
   towers.push(new Tower(x,y,placingType));
   gold-=cost; placingType=null; selectedSlot=-1;
   renderSlotBar();
@@ -1533,6 +1681,11 @@ function update(){
       else if(e.type==='darkMage')  gold+=50;
       else if(e.type==='ghost')     gold+=5;
       else if(e.type==='knightLord') gold+=100;
+      else if(e.type==='mercenary') gold+=15;
+      else if(e.type==='militia') gold+=10;
+      else if(e.type==='impKnight') gold+=22;
+      else if(e.type==='eliteMerc') gold+=22;
+      else if(e.type==='bruteKnight') gold+=50;
       enemies.splice(i,1);
     }
   }
@@ -1600,7 +1753,7 @@ function draw(){
   });
   ctx.restore();
   if(placingType&&placingType!=='wire'&&placingType!=='wall'){
-    const rangeMap={fighter:50,archer:120,puppeteer:0,lightning:150,marionette:150};
+    const rangeMap={fighter:50,archer:120,puppeteer:0,lightning:150,marionette:150,merchant:0};
     const range=rangeMap[placingType]||0;
     const blocked=isTooCloseToTower(mouseX,mouseY)||isOnPath(mouseX,mouseY);
     ctx.strokeStyle=blocked?'red':'white';
@@ -1665,7 +1818,7 @@ function loop(now){
   goldEl.textContent=gold;
   hpEl.textContent=hp;
   waveEl.textContent=wave;
-  document.getElementById('waveTotal').textContent=isTutorial?'3':'25';
+  document.getElementById('waveTotal').textContent=isTutorial?'3':(gameDifficulty==='normal'?'35':'25');
   timeEl.textContent=isTutorial?'∞':timeLeft;
   const boss=enemies.find(e=>e.isBoss);
   document.getElementById('bossBar').style.display=boss?'block':'none';
