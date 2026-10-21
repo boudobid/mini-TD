@@ -72,11 +72,11 @@
     <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:silver;display:inline-block;border-radius:2px;outline:1px solid gold;"></span><b>기사단장</b> <small style="color:#aaa;">체력 1200 · 특성: 보스/소환(기마병·기사)</small></div>
     </div>
     <div id="codexCat_보통">
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#cc4422;display:inline-block;border-radius:2px;"></span><b>용병</b> <small style="color:#aaa;">체력 75</small></div>
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#cc8822;display:inline-block;border-radius:2px;"></span><b>제국 민병대</b> <small style="color:#aaa;">체력 38</small></div>
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#2244aa;display:inline-block;border-radius:2px;"></span><b>제국 기사</b> <small style="color:#aaa;">체력 300</small></div>
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#663388;display:inline-block;border-radius:2px;"></span><b>엘리트 용병</b> <small style="color:#aaa;">체력 225 · 특성: 은신</small></div>
-    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#555566;display:inline-block;border-radius:2px;outline:1px solid gold;"></span><b>제국 부르트 기사</b> <small style="color:#aaa;">체력 750 · 특성: 보스</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#cc4422;display:inline-block;border-radius:2px;"></span><b>용병</b> <small style="color:#aaa;">체력 90</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#cc8822;display:inline-block;border-radius:2px;"></span><b>제국 민병대</b> <small style="color:#aaa;">체력 45</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#2244aa;display:inline-block;border-radius:2px;"></span><b>제국 기사</b> <small style="color:#aaa;">체력 360</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#663388;display:inline-block;border-radius:2px;"></span><b>엘리트 용병</b> <small style="color:#aaa;">체력 270 · 특성: 은신</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#555566;display:inline-block;border-radius:2px;outline:1px solid gold;"></span><b>제국 부르트 기사</b> <small style="color:#aaa;">체력 900 · 특성: 보스</small></div>
     </div>
     </div>
   </div>
@@ -1024,11 +1024,10 @@ class Enemy{
     if(type==='ghost'){    this.hp=500;  this.maxHp=500;  this.baseSpeed=1.2; this.color='#aaaaff'; this.hidden=true; }
     if(type==='knightLord'){ this.hp=20000; this.maxHp=20000; this.baseSpeed=0.6; this.color='silver'; this.isBoss=(wave===25); this.summonCavalryTick=0; this.summonKnightTick=0; this.ragePhase=false; }
     if(type==='mercenary'){ this.hp=75; this.maxHp=75; this.baseSpeed=1; this.color='#cc4422'; }
-    if(type==='militia'){ this.hp=38; this.maxHp=38; this.baseSpeed=2; this.color='#cc8822'; }
-    if(type==='impKnight'){ this.hp=300; this.maxHp=300; this.baseSpeed=0.6; this.color='#2244aa'; }
-    if(type==='eliteMerc'){ this.hp=225; this.maxHp=225; this.baseSpeed=2.3; this.color='#663388'; this.hidden=true; }
-    if(type==='bruteKnight'){ this.hp=750; this.maxHp=750; this.baseSpeed=0.4; this.color='#555566'; this.isBoss=(wave===12 && gameDifficulty==='normal'); this.attackCool=0; this.attackTick=0; this.attackRect=null; }
-    if(gameDifficulty==='normal') this.baseSpeed*=1.2;
+    if(type==='militia'){ this.hp=45; this.maxHp=45; this.baseSpeed=2; this.color='#cc8822'; }
+    if(type==='impKnight'){ this.hp=360; this.maxHp=360; this.baseSpeed=0.6; this.color='#2244aa'; }
+    if(type==='eliteMerc'){ this.hp=270; this.maxHp=270; this.baseSpeed=2.3; this.color='#663388'; this.hidden=true; }
+    if(type==='bruteKnight'){ this.hp=900; this.maxHp=900; this.baseSpeed=0.4; this.color='#555566'; this.isBoss=(wave===12 && gameDifficulty==='normal'); this.attackCool=0; this.attackTick=0; this.attackRect=null; }
     this.speed=this.baseSpeed;
   }
   update(){
@@ -1074,18 +1073,27 @@ class Enemy{
         }
       }
     }
-    // 제국 부르트 기사: 가장 가까운 타워를 향해 직사각형 공격, 피격 타워 3초 기절
+    // 제국 부르트 기사: 가장 가까운 타워를 향해 직사각형(길이 40) 공격, 피격 타워 3초 기절
     if(this.type==='bruteKnight' && !this.stunTick){
       if(this.attackCool>0) this.attackCool--;
       if(this.attackTick>0){ this.attackTick--; if(this.attackTick<=0) this.attackRect=null; }
       if(this.attackCool<=0 && this.attackTick<=0){
+        // 기절 중이거나 면역 상태인 타워는 목표에서 제외
         let nearest=null, minDist=Infinity;
-        towers.forEach(t=>{ const d=Math.hypot(t.x-this.x,t.y-this.y); if(d<minDist){ minDist=d; nearest=t; } });
-        if(nearest && minDist<250){
+        towers.forEach(t=>{
+          if(t.stunTick>0 || t.stunImmune>0) return;
+          const d=Math.hypot(t.x-this.x,t.y-this.y);
+          if(d<minDist){ minDist=d; nearest=t; }
+        });
+        if(nearest && minDist<40){
           this.attackTick=30; this.attackCool=300;
-          this.attackRect={tx:nearest.x,ty:nearest.y};
+          const dx=nearest.x-this.x, dy=nearest.y-this.y;
+          const dd=Math.hypot(dx,dy)||1;
+          const ex=this.x+dx/dd*40, ey=this.y+dy/dd*40;
+          this.attackRect={tx:ex,ty:ey};
           towers.forEach(t=>{
-            if(isTowerInAttackRect(t,this.x,this.y,nearest.x,nearest.y,25)) t.stunTick=180;
+            if(t.stunTick>0 || t.stunImmune>0) return;
+            if(isTowerInAttackRect(t,this.x,this.y,ex,ey,25)) t.stunTick=180;
           });
         }
       }
@@ -1104,6 +1112,8 @@ class Enemy{
     }
     // 번개 스턴: 멈춤
     if(this.stunTick>0){ this.stunTick--; return; }
+    // 부르트 기사: 공격 동작 중 잠깐 정지
+    if(this.type==='bruteKnight' && this.attackTick>0) return;
 
     const t=path[this.i];
     const dx=t.x-this.x, dy=t.y-this.y;
@@ -1358,10 +1368,15 @@ class Tower{
     if(type==='marionette'){  this.range=150; this.damage=50;  this.coolMax=120; }
     if(type==='merchant'){   this.range=0;   this.damage=0;   this.coolMax=0; }
     this.baseRange=this.range; this.cool=0; this.summonCool=0;
-    this.upgradeLevel=0; this.stunTick=0;
+    this.upgradeLevel=0; this.stunTick=0; this.stunImmune=0;
   }
   update(){
-    if(this.stunTick>0){ this.stunTick--; return; }
+    if(this.stunImmune>0) this.stunImmune--;
+    if(this.stunTick>0){
+      this.stunTick--;
+      if(this.stunTick<=0){ this.stunTick=0; this.stunImmune=300; }
+      return;
+    }
     if(this.type==='merchant') return;
     if(this.type==='puppeteer'){
       if(this.cool>0){ this.cool--; return; }
@@ -1430,7 +1445,19 @@ class Tower{
     }
     if(this.stunTick>0){
       ctx.save();
-      ctx.strokeStyle='#ffcc00'; ctx.lineWidth=2;
+      const pulse=0.5+0.5*Math.sin(this.stunTick*0.4);
+      ctx.fillStyle='rgba(0,0,0,'+(0.35+0.25*pulse)+')';
+      ctx.beginPath(); ctx.arc(this.x,this.y,10,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='rgba(255,210,0,'+(0.6+0.4*pulse)+')';
+      ctx.lineWidth=3;
+      ctx.beginPath(); ctx.arc(this.x,this.y,14+2*pulse,0,Math.PI*2); ctx.stroke();
+      ctx.fillStyle='#ffd200'; ctx.font='13px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('💫', this.x, this.y-18);
+      ctx.restore();
+    } else if(this.stunImmune>0){
+      ctx.save();
+      ctx.strokeStyle='rgba(120,200,255,'+(0.25+0.25*(this.stunImmune/300))+')';
+      ctx.lineWidth=1.5;
       ctx.beginPath(); ctx.arc(this.x,this.y,14,0,Math.PI*2); ctx.stroke();
       ctx.restore();
     }
