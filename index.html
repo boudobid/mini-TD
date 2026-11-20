@@ -77,6 +77,8 @@
     <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#2244aa;display:inline-block;border-radius:2px;"></span><b>제국 기사</b> <small style="color:#aaa;">체력 360</small></div>
     <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#663388;display:inline-block;border-radius:2px;"></span><b>엘리트 용병</b> <small style="color:#aaa;">체력 270 · 특성: 은신</small></div>
     <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#555566;display:inline-block;border-radius:2px;outline:1px solid gold;"></span><b>제국 부르트 기사</b> <small style="color:#aaa;">체력 900 · 특성: 보스</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#8a2be2;display:inline-block;border-radius:2px;"></span><b>암흑</b> <small style="color:#aaa;">체력 1000</small></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;"><span style="width:14px;height:14px;background:#4b0082;display:inline-block;border-radius:2px;outline:1px solid gold;"></span><b>암흑술사</b> <small style="color:#aaa;">체력 17500 · 특성: 보스/소환(암흑)·체력 7000 이하 은신</small></div>
     </div>
     </div>
   </div>
@@ -219,7 +221,7 @@ let wireEquipped = false;
 let wallCoolTick = 0;
 let wallEquipped = false;
 
-const equipped=[], towers=[], enemies=[], dolls=[], wires=[], walls=[], lightnings=[];
+const equipped=[], towers=[], enemies=[], dolls=[], wires=[], walls=[], lightnings=[], fxList=[];
 const PATH_BLOCK_RADIUS=15, TOWER_BLOCK_RADIUS=20, MAX_SLOTS=6;
 let selectedSlot=-1;
 let achCat='all'; let codexCat='all';
@@ -405,7 +407,7 @@ function showOverlay(type){
     overlay.style.background='rgba(60,0,0,0.88)';
     msg.style.color='#ff4444';
     msg.textContent='💀 게임 오버';
-    const reward=wave*4;
+    const reward=wave*6;
     let bonus='';
     if(unlockAchievement('first_lose')){
       persistent.gold+=50; bonus=' 🏅업적 달성: 첫 상처 (+50 코인)';
@@ -420,8 +422,9 @@ function showOverlay(type){
     if(unlockAchievement('first_win')){
       persistent.gold+=50; bonus=' 🏅업적 달성: 첫 승리 (+50 코인)';
     }
-    sub.textContent='모든 웨이브를 막아냈습니다! +125 코인 획득!'+bonus;
-    persistent.gold+=125; savePersistent();
+    const clearReward = gameDifficulty==='normal' ? 175 : 125;
+    sub.textContent='모든 웨이브를 막아냈습니다! +'+clearReward+' 코인 획득!'+bonus;
+    persistent.gold+=clearReward; savePersistent();
   }
   overlay.style.display='flex';
 }
@@ -432,7 +435,7 @@ function resetGame(){
   hideDifficulty();
   gold=100; hp=200; wave=1; timeLeft=60;
   gameOver=false; gameStarted=false;
-  towers.length=0; enemies.length=0; dolls.length=0; wires.length=0; walls.length=0; lightnings.length=0;
+  towers.length=0; enemies.length=0; dolls.length=0; wires.length=0; walls.length=0; lightnings.length=0; fxList.length=0;
   waveStarted=false; preparing=false; spawnCount=0;
   placingType=null; selectedSlot=-1; selectedTower=null;
   spawnTick=0; timeTick=0; waveElapsedTick=0; wireCoolTick=0; wireEquipped=false; wallCoolTick=0; wallEquipped=false;
@@ -495,7 +498,7 @@ function startTutorial(){
   hillZones=[{x:300,y:150,r:30}];
   gold=10000; hp=200; wave=1; timeLeft=9999;
   equipped.length=0; equipped.push('fighter','archer');
-  towers.length=0; enemies.length=0; dolls.length=0; wires.length=0; walls.length=0; lightnings.length=0;
+  towers.length=0; enemies.length=0; dolls.length=0; wires.length=0; walls.length=0; lightnings.length=0; fxList.length=0;
   gameStarted=true; gameOver=false; waveStarted=false;
   spawnCount=0; spawnTick=0; timeTick=0; waveElapsedTick=0;
   placingType=null; selectedSlot=-1; selectedTower=null;
@@ -990,6 +993,7 @@ class Doll{
         if(this.hp<=0){
           this.dead=true;
           if(this.explosive){
+            fxList.push({type:'explode', x:this.x, y:this.y, life:24, maxLife:24});
             const hit=enemies.filter(en=>Math.hypot(en.x-this.x,en.y-this.y)<30);
             hit.forEach(en=>{ en.hp-=80; });
             if(hit.length>0) lightnings.push({segments:hit.map(en=>[this.x,this.y,en.x,en.y]),life:15});
@@ -1023,11 +1027,13 @@ class Enemy{
     if(type==='darkMage'){ this.hp=8000; this.maxHp=8000; this.baseSpeed=0.5; this.color='#660066'; this.isBoss=(wave===20); this.summonTick=0; this.phase2=false; }
     if(type==='ghost'){    this.hp=500;  this.maxHp=500;  this.baseSpeed=1.2; this.color='#aaaaff'; this.hidden=true; }
     if(type==='knightLord'){ this.hp=20000; this.maxHp=20000; this.baseSpeed=0.6; this.color='silver'; this.isBoss=(wave===25); this.summonCavalryTick=0; this.summonKnightTick=0; this.ragePhase=false; }
-    if(type==='mercenary'){ this.hp=75; this.maxHp=75; this.baseSpeed=1; this.color='#cc4422'; }
+    if(type==='mercenary'){ this.hp=90; this.maxHp=90; this.baseSpeed=1; this.color='#cc4422'; }
     if(type==='militia'){ this.hp=45; this.maxHp=45; this.baseSpeed=2; this.color='#cc8822'; }
     if(type==='impKnight'){ this.hp=360; this.maxHp=360; this.baseSpeed=0.6; this.color='#2244aa'; }
     if(type==='eliteMerc'){ this.hp=270; this.maxHp=270; this.baseSpeed=2.3; this.color='#663388'; this.hidden=true; }
     if(type==='bruteKnight'){ this.hp=900; this.maxHp=900; this.baseSpeed=0.4; this.color='#555566'; this.isBoss=(wave===12 && gameDifficulty==='normal'); this.attackCool=0; this.attackTick=0; this.attackRect=null; }
+    if(type==='darkSorcerer'){ this.hp=17500; this.maxHp=17500; this.baseSpeed=0.6; this.color='#4b0082'; this.isBoss=true; this.summonTick=0; this.enraged=false; }
+    if(type==='dark'){ this.hp=1000; this.maxHp=1000; this.baseSpeed=1; this.color='#8a2be2'; }
     this.speed=this.baseSpeed;
   }
   update(){
@@ -1052,6 +1058,24 @@ class Enemy{
         }
       }
     }
+    // 암흑술사: 체력 7000 이하 시 은신 + 이속 증가
+    if(this.type==='darkSorcerer' && !this.enraged && this.hp<=7000){
+      this.enraged=true; this.hidden=true;
+      this.baseSpeed*=1.25; this.speed=this.baseSpeed;
+    }
+    // 암흑술사: 5초(300틱)마다 암흑 4마리 소환
+    if(this.type==='darkSorcerer' && !this.stunTick){
+      this.summonTick++;
+      if(this.summonTick>=300){
+        this.summonTick=0;
+        for(let s=0;s<4;s++){
+          const dk=new Enemy('dark');
+          dk.x=this.x; dk.y=this.y; dk.i=this.i;
+          dk.isBoss=false;
+          enemies.push(dk);
+        }
+      }
+    }
     // 기사단장: 10초(600틱)마다 기마병 2마리, 5초(300틱)마다 기사 4마리 소환
     if(this.type==='knightLord' && !this.stunTick){
       this.summonCavalryTick++;
@@ -1073,7 +1097,7 @@ class Enemy{
         }
       }
     }
-    // 제국 부르트 기사: 가장 가까운 타워를 향해 직사각형(길이 40) 공격, 피격 타워 3초 기절
+    // 제국 부르트 기사: 사거리(70) 내 가장 가까운 타워를 향해 직사각형(길이 70·너비 25) 공격, 피격 타워 3초 기절
     if(this.type==='bruteKnight' && !this.stunTick){
       if(this.attackCool>0) this.attackCool--;
       if(this.attackTick>0){ this.attackTick--; if(this.attackTick<=0) this.attackRect=null; }
@@ -1085,15 +1109,15 @@ class Enemy{
           const d=Math.hypot(t.x-this.x,t.y-this.y);
           if(d<minDist){ minDist=d; nearest=t; }
         });
-        if(nearest && minDist<40){
-          this.attackTick=30; this.attackCool=300;
+        if(nearest && minDist<70){
+          this.attackTick=30; this.attackCool=600;
           const dx=nearest.x-this.x, dy=nearest.y-this.y;
           const dd=Math.hypot(dx,dy)||1;
-          const ex=this.x+dx/dd*40, ey=this.y+dy/dd*40;
+          const ex=this.x+dx/dd*70, ey=this.y+dy/dd*70;
           this.attackRect={tx:ex,ty:ey};
           towers.forEach(t=>{
             if(t.stunTick>0 || t.stunImmune>0) return;
-            if(isTowerInAttackRect(t,this.x,this.y,ex,ey,25)) t.stunTick=180;
+            if(isTowerInAttackRect(t,this.x,this.y,ex,ey,12.5)) t.stunTick=180;
           });
         }
       }
@@ -1120,7 +1144,10 @@ class Enemy{
     const dist=Math.hypot(dx,dy);
     if(dist<2){
       this.i++;
-      if(this.i>=path.length){ if(!isTutorial) hp-=this.hp; this.hp=0; }
+      if(this.i>=path.length){
+        if(!isTutorial){ hp-=this.hp; fxList.push({type:'baseHit', x:base.x, y:base.y, life:30, maxLife:30}); }
+        this.hp=0;
+      }
     }else{
       this.x+=dx/dist*this.speed; this.y+=dy/dist*this.speed;
     }
@@ -1150,10 +1177,10 @@ class Enemy{
       ctx.translate(this.x,this.y);
       ctx.rotate(angle);
       ctx.fillStyle='rgba(255,80,80,'+alpha+')';
-      ctx.fillRect(0,-25,len,50);
+      ctx.fillRect(0,-12.5,len,25);
       ctx.strokeStyle='rgba(255,40,40,'+(alpha*1.5)+')';
       ctx.lineWidth=2;
-      ctx.strokeRect(0,-25,len,50);
+      ctx.strokeRect(0,-12.5,len,25);
       ctx.restore();
     }
     ctx.textAlign='center';
@@ -1173,6 +1200,7 @@ function getEnemyInfo(e){
   if(e.type==='ghost')     return '은신';
   if(e.type==='knightLord') return '보스/소환';
   if(e.type==='bruteKnight') return e.isBoss ? '보스' : '';
+  if(e.type==='darkSorcerer') return e.enraged ? '보스/소환/은신' : '보스/소환';
   return '';
 }
 
@@ -1213,7 +1241,7 @@ function buildWaveQueue(){
     else if(w===22){ for(let i=0;i<30;i++) waveQueue.push('eliteMerc'); for(let i=0;i<15;i++) waveQueue.push('impKnight'); for(let i=0;i<5;i++) waveQueue.push('bruteKnight'); }
     else if(w===23){ for(let i=0;i<20;i++) waveQueue.push('militia'); for(let i=0;i<20;i++) waveQueue.push('eliteMerc'); for(let i=0;i<5;i++) waveQueue.push('bruteKnight'); }
     else if(w===24){ for(let i=0;i<30;i++) waveQueue.push('impKnight'); for(let i=0;i<20;i++) waveQueue.push('eliteMerc'); for(let i=0;i<30;i++) waveQueue.push('militia'); }
-    else if(w===25){ for(let i=0;i<8;i++) waveQueue.push('bruteKnight'); for(let i=0;i<15;i++) waveQueue.push('impKnight'); for(let i=0;i<20;i++) waveQueue.push('eliteMerc'); }
+    else if(w===25){ waveQueue.push('darkSorcerer'); for(let i=0;i<8;i++) waveQueue.push('bruteKnight'); for(let i=0;i<15;i++) waveQueue.push('impKnight'); for(let i=0;i<20;i++) waveQueue.push('eliteMerc'); }
     else if(w===26){ for(let i=0;i<30;i++) waveQueue.push('mercenary'); for(let i=0;i<20;i++) waveQueue.push('impKnight'); for(let i=0;i<5;i++) waveQueue.push('bruteKnight'); }
     else if(w===27){ for(let i=0;i<30;i++) waveQueue.push('eliteMerc'); for(let i=0;i<8;i++) waveQueue.push('bruteKnight'); }
     else if(w===28){ for(let i=0;i<30;i++) waveQueue.push('impKnight'); for(let i=0;i<8;i++) waveQueue.push('bruteKnight'); }
@@ -1253,6 +1281,8 @@ function buildWaveQueue(){
   else if(w===23){ for(let i=0;i<20;i++) waveQueue.push('cavalry'); for(let i=0;i<20;i++) waveQueue.push('ninja'); for(let i=0;i<10;i++) waveQueue.push('golem'); }
   else if(w===24){ for(let i=0;i<30;i++) waveQueue.push('knight'); for(let i=0;i<20;i++) waveQueue.push('cavalry'); for(let i=0;i<30;i++) waveQueue.push('ninja'); }
   else if(w===25){ waveQueue.push('knightLord'); for(let i=0;i<15;i++) waveQueue.push('knight'); for(let i=0;i<10;i++) waveQueue.push('cavalry'); for(let i=0;i<20;i++) waveQueue.push('ninja'); }
+  // 암흑술사는 보통 난이도 전용
+  waveQueue=waveQueue.filter(t=>t!=='darkSorcerer');
   spawnLimit=waveQueue.length;
 }
 
@@ -1291,8 +1321,18 @@ function readyWave(){
 }
 
 function payoutMerchants(){
-  const count=towers.filter(t=>t.type==='merchant').length;
-  if(count>0) gold+=count*100;
+  const merchants=towers.filter(t=>t.type==='merchant');
+  if(merchants.length>0){
+    gold+=merchants.length*100;
+    merchants.forEach(m=>fxList.push({type:'gold', x:m.x, y:m.y, life:60, maxLife:60}));
+  }
+}
+
+// 웨이브 클리어 보상 (웨이브가 높을수록 증가)
+function grantWaveReward(clearedWave){
+  const reward=20+clearedWave*10;
+  gold+=reward;
+  fxList.push({type:'waveReward', amount:reward, x:300, y:180, life:90, maxLife:90});
 }
 
 function nextWave(){
@@ -1310,8 +1350,9 @@ function nextWave(){
     if(spawnCount>=spawnLimit&&enemies.length===0) showOverlay('clear');
     return;
   }
+  grantWaveReward(wave);
   wave++;
-  const bossWaves = gameDifficulty==='normal' ? [12] : [10,20,25];
+  const bossWaves = gameDifficulty==='normal' ? [12,25] : [10,20,25];
   timeLeft = bossWaves.includes(wave) ? 120 : 60;
   spawnCount=0; spawnTick=0; timeTick=0; waveElapsedTick=0;
   buildWaveQueue(); waveStarted=true; payoutMerchants();
@@ -1321,7 +1362,7 @@ function canSkip(){
   if(!waveStarted) return false;
   const isLast = isTutorial ? wave>=3 : wave>=(gameDifficulty==='normal'?35:25);
   if(isLast) return false;
-  const bossWaves = gameDifficulty==='normal' ? [12] : [10,20,25];
+  const bossWaves = gameDifficulty==='normal' ? [12,25] : [10,20,25];
   const threshold = bossWaves.includes(wave) ? 2400 : 1500;
   return waveElapsedTick>=threshold;
 }
@@ -1335,8 +1376,9 @@ function skipWave(){
     buildWaveQueue(); waveStarted=true; payoutMerchants();
     return;
   }
+  grantWaveReward(wave);
   wave++;
-  const bossWaves = gameDifficulty==='normal' ? [12] : [10,20,25];
+  const bossWaves = gameDifficulty==='normal' ? [12,25] : [10,20,25];
   timeLeft = bossWaves.includes(wave) ? 120 : 60;
   spawnCount=0; spawnTick=0; timeTick=0; waveElapsedTick=0;
   buildWaveQueue(); waveStarted=true; payoutMerchants();
@@ -1348,7 +1390,7 @@ function updateSkipUI(){
   const isLast = isTutorial ? wave>=3 : wave>=(gameDifficulty==='normal'?35:25);
   if(waveStarted && !isLast){
     skipBtn.style.display='inline-block';
-    const bossWaves = gameDifficulty==='normal' ? [12] : [10,20,25];
+    const bossWaves = gameDifficulty==='normal' ? [12,25] : [10,20,25];
     const threshold = bossWaves.includes(wave) ? 2400 : 1500;
     const left=threshold-waveElapsedTick;
     if(left<=0){ skipBtn.disabled=false; skipTimer.textContent=''; }
@@ -1669,6 +1711,12 @@ function update(){
     if(lightnings[i].life<=0) lightnings.splice(i,1);
   }
 
+  // 각종 이펙트 수명
+  for(let i=fxList.length-1;i>=0;i--){
+    fxList[i].life--;
+    if(fxList[i].life<=0) fxList.splice(i,1);
+  }
+
   // 와이어 업데이트
   wires.forEach(w=>w.update());
   for(let i=wires.length-1;i>=0;i--){
@@ -1779,6 +1827,48 @@ function draw(){
     l.segments.forEach(s=>{ ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(s[2],s[3]); ctx.stroke(); });
   });
   ctx.restore();
+  // 각종 이펙트
+  fxList.forEach(f=>{
+    const t=1-f.life/f.maxLife;
+    if(f.type==='gold'){
+      ctx.save();
+      ctx.fillStyle='rgba(255,215,0,'+(1-t)+')';
+      ctx.font='bold 12px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('+100 💰', f.x, f.y-14-t*20);
+      ctx.restore();
+    } else if(f.type==='waveReward'){
+      ctx.save();
+      ctx.fillStyle='rgba(255,215,0,'+(1-t)+')';
+      ctx.font='bold 16px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('웨이브 보상 +'+f.amount+' 💰', f.x, f.y-t*26);
+      ctx.restore();
+    } else if(f.type==='explode'){
+      ctx.save();
+      const r=10+t*35;
+      const g=ctx.createRadialGradient(f.x,f.y,0,f.x,f.y,r);
+      g.addColorStop(0,'rgba(255,240,150,'+(0.85*(1-t))+')');
+      g.addColorStop(0.6,'rgba(255,150,0,'+(0.6*(1-t))+')');
+      g.addColorStop(1,'rgba(255,60,0,0)');
+      ctx.fillStyle=g;
+      ctx.beginPath(); ctx.arc(f.x,f.y,r,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    } else if(f.type==='baseHit'){
+      ctx.save();
+      ctx.strokeStyle='rgba(255,60,60,'+(1-t)+')';
+      ctx.lineWidth=4*(1-t)+1;
+      ctx.beginPath(); ctx.arc(f.x,f.y,12+t*40,0,Math.PI*2); ctx.stroke();
+      ctx.restore();
+    }
+  });
+  // 기지 피격 화면 플래시
+  const baseFx=fxList.find(f=>f.type==='baseHit');
+  if(baseFx){
+    const bt=1-baseFx.life/baseFx.maxLife;
+    ctx.save();
+    ctx.fillStyle='rgba(255,0,0,'+(0.4*(1-bt)*(1-bt))+')';
+    ctx.fillRect(0,0,600,400);
+    ctx.restore();
+  }
   if(placingType&&placingType!=='wire'&&placingType!=='wall'){
     const rangeMap={fighter:50,archer:120,puppeteer:0,lightning:150,marionette:150,merchant:0};
     const range=rangeMap[placingType]||0;
